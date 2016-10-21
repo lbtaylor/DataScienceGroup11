@@ -329,10 +329,6 @@ Include some summary tables of the data as as shown in table \ref{summary-data}.
 
 \subsection{Including figures} Please don't forget to add nice data plots in your documents. Plots are nice to conveying message and much better than tables. Discuss what facts the figure is revealing and refer the figure from the text as figure \ref{fig:data-plot}.
 
-<<data-plot, fig.width=5, fig.height=5, fig.align='center', fig.cap="Awesome figure caption" ,out.width='.6\\linewidth',fig.pos="hbtp">>=
-plot(trees)
-@
-
 
 \section{Conclusion} The conclusion is an elaboration of your abstract. Here you will discuss what you have done and how. The gist of the results need to be mentioned here. It needs to be convincing and the reader will never regret forgetting the date. Please keep it in mind that there may be readers who only read your conclusion. So, make your conclusion complete so that no reader misses anything even if they don't want to read the whole document.\\
 
@@ -468,6 +464,8 @@ drop table #tempTweets
 \bibitem{R-knitr2}
   Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/
   
+\bibitem{Representaive}
+  Morstatter, Fred, Jürgen Pfeffer, Huan Liu, & Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. https://arxiv.org/abs/1306.5204
   
 \bibitem{TextMiningSteps} 
   http://www.sthda.com/english/wiki/
@@ -484,9 +482,7 @@ drop table #tempTweets
   http://stackoverflow.com/questions/18153504/
   removing-non-english-text-from-corpus-in-r-using-tm 
   
-  
-\bibitem{TweetApp}
-  \texttt{hi}
+ 
   
   
 \bibitem{LatLongFunc} 
@@ -495,9 +491,9 @@ drop table #tempTweets
   latitude-longitude-coordinates-to-state-code-in-r
   
   
-\end{thebibliography}
 
-\end{document}
+
+
 
 
 \bibitem{TextMiningWalkthrough} TextMining. https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html
@@ -511,8 +507,9 @@ drop table #tempTweets
   \emph{Converting lat and long to state value} 
   http://stackoverflow.com/questions/8751497/
   latitude-longitude-coordinates-to-state-code-in-r 
-  
-  
+
+\end{thebibliography}
+\end{document}  
 
 
 
