@@ -438,9 +438,7 @@ drop table #tempTweets
 \end{verbatim}
 
 
-
-
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 
 \bibitem{xtab}
     Desilver, Drew.
@@ -464,7 +462,7 @@ drop table #tempTweets
 \bibitem{R-knitr2}
   Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/
   
-\bibitem{Representaive}
+\bibitem{R-knitr3}
   Morstatter, Fred, Jürgen Pfeffer, Huan Liu, & Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. https://arxiv.org/abs/1306.5204
   
 \bibitem{TextMiningSteps} 
@@ -490,10 +488,6 @@ drop table #tempTweets
   http://stackoverflow.com/questions/8751497/
   latitude-longitude-coordinates-to-state-code-in-r
   
-  
-
-
-
 
 
 \bibitem{TextMiningWalkthrough} TextMining. https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html
