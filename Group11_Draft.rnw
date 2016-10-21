@@ -234,9 +234,18 @@ tail(allTermFreqs.tdm.rollup.df.sorted)
 #  order(allTermFreqs.tdm.rollup$freq,allTermFreqs.tdm.rollup$term),]
 @
 
-
 <<>>=
 summary(dataSet)
+@
+
+After the text data has been prepared, the coordinates are then pulled from the each tweet. These will be used to show the frequency of tweets pertaining to each data set.
+
+<<>>=
+x<-read.csv("SampleTwitterData_Trump.csv")
+xx<-as.numeric(unlist(regmatches(x,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
+x.cord<-xx[seq.int(1, length(xx), 8)]
+y.cord<-xx[seq.int(2, length(xx), 8)]
+df.cord<-data.frame(x.cord,y.cord)
 @
 
 \subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to english tweets, many tweets contained language other than english, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use english as the default language, a decent percentage of tweets were non-english. XXX Is it possible to figure out this percentage based on character encoding? XXX
@@ -314,11 +323,18 @@ tail(allTermFreqs.tdm.rollup.df.sorted)
 head(allTermFreqs.tdm.rollup.df.sorted)
 @
 
-
 <<>>= 
 fa <- findAssocs(tdm, "women", 0.07)
 fa
 as.data.frame(fa)
+@
+
+This data will then be mapped to show it's location. Below is a rough plotting of the given data.
+
+<<>>=
+library(maps)
+map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
+points(x.cord,y.cord, col="red", pch=16)
 @
 
 
