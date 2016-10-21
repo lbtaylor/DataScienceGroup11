@@ -58,7 +58,7 @@ dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/S
 
 The data set is a continous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
 
-Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data. (cite) 
+Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples (Morstatter). While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
 
 The json data provided by the public sample streaming API contains many fields and is considered structured data.
 Twitter's data objects are provided here: https://dev.twitter.com/overview/api
