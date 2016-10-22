@@ -1,6 +1,6 @@
 # For R
 .Rhistory
-.tex
+*.tex
 /figure
 
 ## Core latex/pdflatex auxiliary files:
