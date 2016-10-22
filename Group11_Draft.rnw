@@ -5,6 +5,7 @@
 \usepackage{booktabs}
 \usepackage{xcolor,listings}
 \usepackage{textcomp}
+\usepackage{ragged2e}
 
 \usepackage[backend=bibtex]{biblatex}
 
@@ -19,14 +20,14 @@
 <<echo=FALSE, eval=FALSE>>=
 # This chunk is to solve the problem of bibitem
 #setwd("~/Box Sync/Teaching/stat4410-8416-Data-Science/lectures/04-dynamic-report")
-#Sys.setenv(TEXINPUTS=getwd(),
-#           BIBINPUTS=getwd(),
-#           BSTINPUTS=getwd())
+Sys.setenv(TEXINPUTS=getwd(),
+           BIBINPUTS=getwd(),
+           BSTINPUTS=getwd())
 
 library(knitr)
 @
 
-\begin{abstract}Language is always evolving. As the internet, and especially social media, has increased the availability and immediateness of communication to being able to share a thought with everyone in an instant, everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Extensive cleaning of data will occur so that searches for trends can occur.  These trends in turn will become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.\\\\
+\begin{abstract}Language is always evolving. As the internet, and especially social media, has increased the availability and immediateness of communication to being able to share a thought with everyone in an instant, everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Trends are defined as the most frequent words or topics discussed in Twitter messages (tweets) over time or by area. Extensive cleaning of data will occur so that searches for trends can occur. These trends in turn will become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.\\\\
 \end{abstract}
 
 %\tableofcontents
@@ -50,20 +51,20 @@ Research of tweets is not easily used to predict an election result, as the user
 
 \section{About the data} 
 
-The sample data has been added to a github project and is available via a web link.
+The sample data has been added to a GitHub project and is available via a web link.
 
 <<echo=FALSE>>=
 dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
 @
 
-The data set is a continous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
+The data set is a continuous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
 
 Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples (Morstatter). While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
 
 The json data provided by the public sample streaming API contains many fields and is considered structured data.
 Twitter's data objects are provided here: https://dev.twitter.com/overview/api
 
-The data used for this project comed from capturing the raw json output of sample stream. 
+The data used for this project comes from capturing the raw json output of sample stream. 
 
 Because of the large amount of data and the desire to analyze trends over a longer span of time than Twitter provides via its public API, it was decided to store the data in a SQL Server 2016 database. Data is parsed from JSON into a database table. The parsed data does not contain all possible fields and is indexed on the date field of the tweet.
 
@@ -72,39 +73,43 @@ For the purposes of this document a sample of the parsed data is stored on GitHu
 Below is a function defining the to call the SQL Database which retreives the parsed data along with a command which assigns the result set to a local variable. The query can be modified to limit results to specific time frames or only to tweets that contain a textual value using the T-SQL syntax available in SQL Server 2016.
 
 <<echo=TRUE, eval=FALSE>>=
-GetDataSet <- function () {
+GetDataSet <- function (term = NA, count = 1000) {
+  count <- format(count,scientific = FALSE)
   library(RODBC)
-  dbhandle <- odbcConnect("ODBCName",
-                        uid="userId",
-                        pwd="passWord")
-
-  res <- sqlQuery(dbhandle, "
-     SELECT TOP (100) [Id]
-    --  SELECT [Id]
-      ,[InsertDateTime]
-      ,[CreatedAt]
-      ,[MessageId]
-      ,[UserId]
-      ,[PlaceId]
-      ,[PlaceType]
-      ,[PlaceName]
-      ,[CoordinatesType]
-      ,[CoordinatesCoords]
-      ,[Text]
-      FROM [TwitterData].[dbo].[FlattenedTweets]")
+  dbhandle <- odbcConnect("MyODBCConnectionName",
+                        uid="MyUserId",
+                        pwd="MyPassword")
+  queryParts = c("SELECT TOP (",count,") [MessageId]
+                      ,[CreatedAt]
+                      ,[UserId]
+                      ,[PlaceId]
+                      ,[PlaceType]
+                      ,[PlaceName]
+                      ,[PlaceFullName]
+                      ,[PlaceCountryCode]
+                      ,[PlaceCountry]
+                      ,[PlaceBoundingBox]
+                      ,[CoordinatesType]
+                      ,[CoordinatesCoordinates]
+                      ,[Text]
+                  FROM [TwitterData].[dbo].[NewFlattenedTweets]")
+  if (!is.na(term)) {queryParts <- c(queryParts," WHERE [Text] LIKE '%",term,"%'")}
+  query <- paste(queryParts, collapse='')
+  res <- sqlQuery(dbhandle, query)
   odbcClose(dbhandle)
   return (res);
 }
 
-dataSet <- GetDataSet();
+# Usage
+dataSet <- GetDataSet("Trump",10000);
 @
 
 
 \subsection{Preparing data} 
 
-The most salient value of this data is with the comination of the words of the tweet and the geographic information included with the tweets. In order to prepare the data for textual analysis which includes word frequency counts, word relationships, and word sentiment, it will take the form of a corpus. The corpus structure used for this analysis is part of the tm package.
+The most salient value of this data is with the combination of the words of the tweet and the geographic information included with the tweets. In order to prepare the data for textual analysis which includes word frequency counts, word relationships, and word sentiment, it will take the form of a corpus. The corpus structure used for this analysis is part of the tm package.
 
-Before the textual data can be used, it must be prepared by stripping out characters that interfere with english word analysis. The various transformations may or may not be desired based on the type of anyalysis being performed. In order to encapsulate the process, it is wrapped in a function and passed a character vector consisting of the tweet text.
+Before the textual data can be used, it must be prepared by stripping out characters that interfere with english word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function and passed a character vector consisting of the tweet text.
 
 <<>>=
 TwitterToCorpus <- function(x) {
@@ -234,21 +239,33 @@ tail(allTermFreqs.tdm.rollup.df.sorted)
 #  order(allTermFreqs.tdm.rollup$freq,allTermFreqs.tdm.rollup$term),]
 @
 
+NOTE: THIS SECTION WILL HAVE A TABLE WITH DATA SUMMARY INFORMATION
+NOTE: THE STANDARD R SUMMARY IS TOO VERBOSE FOR A PAPER
+
 <<>>=
-summary(dataSet)
+#summary(dataSet)
 @
 
 After the text data has been prepared, the coordinates are then pulled from the each tweet. These will be used to show the frequency of tweets pertaining to each data set.
 
+NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
+
 <<>>=
-x<-read.csv("SampleTwitterData_Trump.csv")
-xx<-as.numeric(unlist(regmatches(x,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
-x.cord<-xx[seq.int(1, length(xx), 8)]
-y.cord<-xx[seq.int(2, length(xx), 8)]
-df.cord<-data.frame(x.cord,y.cord)
+# This section is not currently working as expected.
+
+#x <- read.csv("https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv")
+#xx <- x[!is.na(x[11]),]
+#head(xx)
+#xx <- xx[11]
+#head(xx)
+#xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
+#xx <- as.numeric(unlist(regmatches(x[10],gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
+#x.cord <- xx[seq.int(1, length(xx), 8)]
+#y.cord <- xx[seq.int(2, length(xx), 8)]
+#df.cord <- data.frame(x.cord,y.cord)
 @
 
-\subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to english tweets, many tweets contained language other than english, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use english as the default language, a decent percentage of tweets were non-english. XXX Is it possible to figure out this percentage based on character encoding? XXX
+\subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English. XXX Is it possible to figure out this percentage based on character encoding? XXX
 
 Tweets do not always provide a simple latitude, longitude to geolocate the tweet. Some contain city information, some contain a bounding box with surrounds an area where the tweet would have come from. This creates an addition layer of work in preparing the data and is due to various personal settings Twitter users adjust to control privacy levels.
 
@@ -272,7 +289,7 @@ enCorpusData <- iconv(corpusData, "UTF-8", "ASCII", sub="")
 library(tm)
 
 myCorpus <- Corpus(VectorSource(enCorpusData))
-inspect(myCorpus)
+#inspect(myCorpus)
 
 myCorpus <- tm_map(myCorpus, content_transformer(tolower))
 
@@ -331,30 +348,29 @@ as.data.frame(fa)
 
 This data will then be mapped to show it's location. Below is a rough plotting of the given data.
 
+NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
+NOTE: IT IS MEANT TO GENERATE A MAP OF TWEET LOCATIONS
+
 <<>>=
-library(maps)
-map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
-points(x.cord,y.cord, col="red", pch=16)
+#library(maps)
+#map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
+#points(x.cord,y.cord, col="red", pch=16)
 @
 
 
 \section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
 
-\subsection{Including tables}
-Include some summary tables of the data as as shown in table \ref{summary-data}. Make sure you discuss about the table you have included and explain the facts it is revealing. You have to sell your table in a way that the reader will understand that this table was awesome and it reveals a fact the reader would otherwise not recognize.\\
+\subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
 
-\subsection{Including figures} Please don't forget to add nice data plots in your documents. Plots are nice to conveying message and much better than tables. Discuss what facts the figure is revealing and refer the figure from the text as figure \ref{fig:data-plot}.
+\subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
 
+\section{Conclusion} 
 
-\section{Conclusion} The conclusion is an elaboration of your abstract. Here you will discuss what you have done and how. The gist of the results need to be mentioned here. It needs to be convincing and the reader will never regret forgetting the date. Please keep it in mind that there may be readers who only read your conclusion. So, make your conclusion complete so that no reader misses anything even if they don't want to read the whole document.\\
+Initial trends that we have seen some evidence of Trump dominates twitter. Table of daily tweets mentioning Trump total more than three times tweets mentioning Clinton.  Trump’s count is approximately twelve times greater than Obama’s count.  With the negativity of twitter, domination of negativity is not necessarily a good thing. \\
 
-Each paragraph of the conclusion may discuss one result you have found or one concept you are proposing. Discuss your findings and why it is better and how it is compared to any existing methods may exist. \\
+Obama seems to be viewed more positively than either candidate. We have had mixed results with word clouds, in terms of finding things that are interesting.  We will also try dot plots. Words associated with “women” is one of the more interesting word associations in this election. Tremendously negative for Trump, negative in a more normal way for Clinton, and mostly positive for Obama. When we find things that are interesting, we hope to also show how those aspects changed over the course of the roughly six weeks of data that we will have. \\
 
-Please don't forget to cite the works of others if you used it in your analysis. The citation is important for two reasons. Fist of all it acknowledges the good works other people have done which encourages them keep continue doing their good work. Second, it protects you from plagiarism which is a very nasty task everyone should avoid.\\
-
-There should be one paragraph about the future direction of the work you have done. You would like to make it so fascinating that the reader would wish to be involved in this work in future. \\
-
-
+We have had the hardest time working on maps.  Our hope is to show some data by state, to see if important geographical differences in the election are apparent in twitter. \\
 
 \section{Appendix}
 
@@ -453,75 +469,39 @@ SELECT DISTINCT
 drop table #tempTweets
 \end{verbatim}
 
-
+{\RaggedRight
 \begin{thebibliography}{99}
 
-\bibitem{xtab}
-    Desilver, Drew.
-    "5 facts about Twitter at age 10". \emph{Pew Research},
-    http://www.pewresearch.org/fact-tank/2016/03/18/5-facts-about-twitter-at-age-10/
-    . 2016
+% Some bibitems were causing compile issues and are currently commented out until it can be resolved.
+
+\bibitem{xtab} Desilver, Drew. "5 facts about Twitter at age 10". \emph{Pew Research}, url{http://www.pewresearch.org/fact-tank/2016/03/18/5-facts-about-twitter-at-age-10/} . 2016
     
-\bibitem{lamport94}
-  Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
-  
-  
-\bibitem{R-base}
-  Giachanou, Anastasia, and Fabio Crestani. "Like It or Not: A Survey of Twitter Sentiment Analysis Methods." \emph{ACM Computing Surveys} 49.2 (2016): 28-28:41. \emph{Business Source Elite}.
-  
-  
-  
-\bibitem{R-knitr1}
-  Kodali, Teja. "Building Wordclouds in R". 2015. https://www.r-bloggers.com/building-wordclouds-in-r/  
-  
-  
-\bibitem{R-knitr2}
-  Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/
-  
-\bibitem{R-knitr3}
-  Morstatter, Fred, Jürgen Pfeffer, Huan Liu, & Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. https://arxiv.org/abs/1306.5204
-  
-\bibitem{TextMiningSteps} 
-  http://www.sthda.com/english/wiki/
-  text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know 
-  
+\bibitem{lamport94} Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
 
-\bibitem{RTwitterAnalysis} 
-  http://www.slideshare.net/rdatamining/
-  text-mining-with-r-an-analysis-of-twitter-data 
+\bibitem{R-base} Giachanou, Anastasia, and Fabio Crestani. "Like It or Not: A Survey of Twitter Sentiment Analysis Methods." \emph{ACM Computing Surveys} 49.2 (2016): 28-28:41. \emph{Business Source Elite}.
+
+%\bibitem{R-knitr1} Kodali, Teja. "Building Wordclouds in R". 2015. url{https://www.r-bloggers.com/building-wordclouds-in-r/}
+
+%\bibitem{R-knitr2} Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. url{HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/}
+  
+%\bibitem{R-knitr3} Morstatter, Fred, Jürgen Pfeffer, Huan Liu, & Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. url{https://arxiv.org/abs/1306.5204}
+  
+%\bibitem{TextMiningSteps} url{http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know}
+
+%\bibitem{RTwitterAnalysis} url{http://www.slideshare.net/rdatamining/text-mining-with-r-an-analysis-of-twitter-data}
+
+%\bibitem{NonEnglishWords} Remove non-english words url{http://stackoverflow.com/questions/18153504/removing-non-english-text-from-corpus-in-r-using-tm}
+
+%\bibitem{LatLongFunc} emph{Converting lat and long to state value} url{http://stackoverflow.com/questions/8751497/latitude-longitude-coordinates-to-state-code-in-r}
+
+%\bibitem{TextMiningWalkthrough} TextMining. url{https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html}
+
+%\bibitem{TweetApp} url{https://www.csc.ncsu.edu/faculty/healey/tweet_viz/tweet_app/}
 
 
-\bibitem{NonEnglishWords} 
-  Remove non-english words 
-  http://stackoverflow.com/questions/18153504/
-  removing-non-english-text-from-corpus-in-r-using-tm 
-  
- 
-  
-  
-\bibitem{LatLongFunc} 
-  emph{Converting lat and long to state value} 
-  http://stackoverflow.com/questions/8751497/
-  latitude-longitude-coordinates-to-state-code-in-r
-  
-
-
-\bibitem{TextMiningWalkthrough} TextMining. https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html
-
-
-\bibitem{TweetApp} 
-  https://www.csc.ncsu.edu/faculty/healey/tweet_viz/tweet_app/ 
-
-
-\bibitem{LatLongFunc} 
-  \emph{Converting lat and long to state value} 
-  http://stackoverflow.com/questions/8751497/
-  latitude-longitude-coordinates-to-state-code-in-r 
 
 \end{thebibliography}
+}
+
+
 \end{document}  
-
-
-
-
-
