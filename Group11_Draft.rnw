@@ -362,7 +362,24 @@ NOTE: IT IS MEANT TO GENERATE A MAP OF TWEET LOCATIONS
 
 \subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
 
+<<>>=
+dailyCounts <- read.csv("counts_wide.csv")
+head(dailyCounts)
+library(knitr)
+kable(dailyCounts, format = 'latex', booktabs = TRUE)
+@
+
 \subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
+<<>>=
+
+tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+
+library(ggplot2)
+highfreq <- tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+highfreq <- highfreq[order(-highfreq$freq),]
+highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$freq)])
+ggplot(highfreq, aes(freq, term)) +  geom_point()
+@
 
 \section{Conclusion} 
 
