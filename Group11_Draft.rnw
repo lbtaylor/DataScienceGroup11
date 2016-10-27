@@ -254,11 +254,21 @@ NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 # This section is not currently working as expected.
 
 #x <- read.csv("https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv")
+<<<<<<< HEAD
 #xx <- x[!is.na(x[11]),]
 #head(xx)
 #xx <- xx[11]
 #head(xx)
 #xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
+=======
+xx <- as.character(dataSet[,!is.na(dataSet[11])])
+
+bbSubset <- as.character(dataSet[is.na(dataSet[11]),11])
+#head(xx)
+xx <- xx[,11]
+#head(xx)
+xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
+>>>>>>> master
 #xx <- as.numeric(unlist(regmatches(x[10],gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
 #x.cord <- xx[seq.int(1, length(xx), 8)]
 #y.cord <- xx[seq.int(2, length(xx), 8)]
@@ -350,6 +360,7 @@ This data will then be mapped to show it's location. Below is a rough plotting o
 
 NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 NOTE: IT IS MEANT TO GENERATE A MAP OF TWEET LOCATIONS
+<<<<<<< HEAD
 
 <<>>=
 #library(maps)
@@ -380,6 +391,21 @@ highfreq <- highfreq[order(-highfreq$freq),]
 highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$freq)])
 ggplot(highfreq, aes(freq, term)) +  geom_point()
 @
+=======
+
+<<>>=
+#library(maps)
+#map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
+#points(x.cord,y.cord, col="red", pch=16)
+@
+
+
+\section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
+
+\subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
+
+\subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
+>>>>>>> master
 
 \section{Conclusion} 
 
