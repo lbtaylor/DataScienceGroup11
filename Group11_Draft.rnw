@@ -199,8 +199,6 @@ Once the text is stemmed and tied back to a reference of the original, unstemmed
 
 <<>>=
 # Word Frequency
-#tdm <- TermDocumentMatrix(myCorpus)
-#dtm <- DocumentTermMatrix(myCorpus)
 tdm <- TermDocumentMatrix(myCorpusCopy)
 dtm <- DocumentTermMatrix(myCorpusCopy)
 
@@ -253,6 +251,7 @@ NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 <<>>=
 # This section is not currently working as expected.
 
+<<<<<<< HEAD
 #x <- read.csv("https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv")
 <<<<<<< HEAD
 #xx <- x[!is.na(x[11]),]
@@ -264,11 +263,19 @@ NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 xx <- as.character(dataSet[,!is.na(dataSet[11])])
 
 bbSubset <- as.character(dataSet[is.na(dataSet[11]),11])
+=======
+#x <- dataSet
+#xx <- x[!is.na(x[11]),]
+>>>>>>> dennis-friday
 #head(xx)
-xx <- xx[,11]
+#xx <- xx[11]
 #head(xx)
+<<<<<<< HEAD
 xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
 >>>>>>> master
+=======
+#xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
+>>>>>>> dennis-friday
 #xx <- as.numeric(unlist(regmatches(x[10],gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
 #x.cord <- xx[seq.int(1, length(xx), 8)]
 #y.cord <- xx[seq.int(2, length(xx), 8)]
@@ -404,8 +411,29 @@ ggplot(highfreq, aes(freq, term)) +  geom_point()
 
 \subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
 
+<<>>=
+#dailyCounts <- read.csv("counts_wide.csv")
+dailyCounts <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/counts_wide.csv')
+head(dailyCounts)
+library(knitr)
+kable(dailyCounts, format = 'latex', booktabs = TRUE)
+@
+
 \subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
+<<<<<<< HEAD
 >>>>>>> master
+=======
+<<>>=
+
+tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+
+library(ggplot2)
+highfreq <- tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+highfreq <- highfreq[order(-highfreq$freq),]
+highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$freq)])
+ggplot(highfreq, aes(freq, term)) +  geom_point()
+@
+>>>>>>> dennis-friday
 
 \section{Conclusion} 
 
