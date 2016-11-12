@@ -36,17 +36,17 @@ library(knitr)
 
 What does a twitter analysis tell us about the 2016 Presidential election?  In a Presidential election many pieces of data are analyzed to determine strategy and behavior.  Polls, voting history, television reports, and newspaper reports all come into play.  In recent years social media has become part of the mix.  Analysis of twitter activity can provide another window into what is happening in the election and why.  \\
 \\
-Twitter is a popular and important social media platform.  Twitter had 320 million monthly active users worldwide in the last quarter of 2015.  65 million of those were in the United States, or 1 in 5 Americans.  Usage is highest with adults under age 50, residents of cities, and upper-income Americans (Desilver).\\
+Twitter is a popular and important social media platform.  Twitter had 320 million monthly active users worldwide in the last quarter of 2015.  65 million of those were in the United States, or 1 in 5 Americans.  Usage is highest with adults under age 50, residents of cities, and upper-income Americans \cite{Desilver}.\\
 \\
-Twitter reflects the attitudes only of certain subsets of the United States population.  Pew Research has found that "the reaction on Twitter to major political events and policy decisions often differs considerably from general public opinion" (Desilver).  Twitter opinions run more negative than the general public.  Twitter users are younger and lean Democratic.  Twitter is broader than most public opinion surveys because those under 18, as well as those outside the United States, can participate (Mitchell and Hitlin).\\
+Twitter reflects the attitudes only of certain subsets of the United States population.  Pew Research has found that "the reaction on Twitter to major political events and policy decisions often differs considerably from general public opinion" \cite{Desilver}.  Twitter opinions run more negative than the general public.  Twitter users are younger and lean Democratic.  Twitter is broader than most public opinion surveys because those under 18, as well as those outside the United States, can participate \cite{Mitchell}.\\
 \\
-Social media does not necessarily mean conversations in the public square.  Often it can mean two groups, in separate houses, talking among themselves.  This type of twitter conversation has been called conversation within "Polarized Crowds, where opposed groups talk about the same topic but mostly just to other group members" (Desilver).  Thus it is appropriate to run separate searches on "Trump" and "Clinton" to look at what those polarized crowds are discussing.  A search for "Obama" provides a contrast to the current candidates.\\
+Social media does not necessarily mean conversations in the public square.  Often it can mean two groups, in separate houses, talking among themselves.  This type of twitter conversation has been called conversation within "Polarized Crowds, where opposed groups talk about the same topic but mostly just to other group members" \cite{Desilver}.  Thus it is appropriate to run separate searches on "Trump" and "Clinton" to look at what those polarized crowds are discussing.  A search for "Obama" provides a contrast to the current candidates.\\
 \\
-Research of tweets is not easily used to predict an election result, as the users of twitter represent a biased sample of the population (Gayo-Avello).  But tweets can still reflect what issues and values are important to each side, how those conflicts rise and fall during the election, and the reaction to the results.\\
+Research of tweets is not easily used to predict an election result, as the users of twitter represent a biased sample of the population \cite{Gayo-Avello}.  But tweets can still reflect what issues and values are important to each side, how those conflicts rise and fall during the election, and the reaction to the results.\\
 \\
 
 
-\subsection{Preparing this document} This whole document is prepared using \textbf{R}  \cite{R-base} package \texttt{knitr} \cite{R-knitr}. It is a dynamic document and reproducible any number of times for any data sets. 
+\subsection{Preparing this document} This whole document is prepared using \textbf{R}  package \texttt{knitr}. It is a dynamic document and reproducible any number of times for any data sets. 
 
 
 \section{About the data} 
@@ -59,7 +59,7 @@ dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/S
 
 The data set is a continuous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
 
-Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples (Morstatter). While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
+Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples \cite{Morstatter}. While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
 
 The json data provided by the public sample streaming API contains many fields and is considered structured data.
 Twitter's data objects are provided here: https://dev.twitter.com/overview/api
@@ -490,17 +490,17 @@ drop table #tempTweets
 
 % Some bibitems were causing compile issues and are currently commented out until it can be resolved.
 
-\bibitem{xtab} Desilver, Drew. "5 facts about Twitter at age 10". \emph{Pew Research}, url{http://www.pewresearch.org/fact-tank/2016/03/18/5-facts-about-twitter-at-age-10/} . 2016
+\bibitem{Desilver} Desilver, Drew. "5 facts about Twitter at age 10". \emph{Pew Research}, url{http://www.pewresearch.org/fact-tank/2016/03/18/5-facts-about-twitter-at-age-10/} . 2016
     
-\bibitem{lamport94} Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
+\bibitem{Gayo-Avello} Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
 
 \bibitem{R-base} Giachanou, Anastasia, and Fabio Crestani. "Like It or Not: A Survey of Twitter Sentiment Analysis Methods." \emph{ACM Computing Surveys} 49.2 (2016): 28-28:41. \emph{Business Source Elite}.
 
-%\bibitem{R-knitr1} Kodali, Teja. "Building Wordclouds in R". 2015. url{https://www.r-bloggers.com/building-wordclouds-in-r/}
+\bibitem{Kodali} Kodali, Teja. "Building Wordclouds in R". 2015. url{https://www.r-bloggers.com/building-wordclouds-in-r/}
 
-%\bibitem{R-knitr2} Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. url{HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/}
+\bibitem{Mitchell} Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. url{HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/}
   
-%\bibitem{R-knitr3} Morstatter, Fred, Jürgen Pfeffer, Huan Liu, & Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. url{https://arxiv.org/abs/1306.5204}
+\bibitem{Morstatter} Morstatter, Fred, Jürgen Pfeffer, Huan Liu, I\& Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. url{https://arxiv.org/abs/1306.5204}
   
 %\bibitem{TextMiningSteps} url{http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know}
 
