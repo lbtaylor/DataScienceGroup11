@@ -1,0 +1,592 @@
+\documentclass{article}
+%\usepackage[margin=1in]{geometry}   % set up margins
+\usepackage[vmargin=1in,hmargin=1in]{geometry}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{xcolor,listings}
+\usepackage{textcomp}
+\usepackage{ragged2e}
+
+\usepackage[backend=bibtex]{biblatex}
+
+
+\begin{document}
+
+\title {Language Trend Analysis Across Twitter in the 2016 United States Presidential Election}
+\author{Luke Taylor\\ Dennis Walsh\\ Thomas Flaherty }
+
+\maketitle
+
+<<echo=FALSE, eval=TRUE>>=
+# This chunk is to solve the problem of bibitem
+#setwd("~/Box Sync/Teaching/stat4410-8416-Data-Science/lectures/04-dynamic-report")
+Sys.setenv(TEXINPUTS=getwd(),
+           BIBINPUTS=getwd(),
+           BSTINPUTS=getwd())
+
+library(knitr)
+@
+
+<<echo=FALSE>>=
+dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
+@
+
+\begin{abstract}Language is always evolving. As the internet, and especially social media, has increased the availability and immediateness of communication to being able to share a thought with everyone in an instant, everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Trends are defined as the most frequent words or topics discussed in Twitter messages (tweets) over time or by area. Extensive cleaning of data will occur so that searches for trends can occur. These trends in turn will become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.\\\\
+\end{abstract}
+
+%\tableofcontents
+
+\section{Introduction} 
+
+What does a twitter analysis tell us about the 2016 Presidential election?  In a Presidential election many pieces of data are analyzed to determine strategy and behavior.  Polls, voting history, television reports, and newspaper reports all come into play.  In recent years social media has become part of the mix.  Analysis of twitter activity can provide another window into what is happening in the election and why.  \\
+\\
+Twitter is a popular and important social media platform.  Twitter had 320 million monthly active users worldwide in the last quarter of 2015.  65 million of those were in the United States, or 1 in 5 Americans.  Usage is highest with adults under age 50, residents of cities, and upper-income Americans \cite{Desilver}.\\
+\\
+Twitter reflects the attitudes only of certain subsets of the United States population.  Pew Research has found that "the reaction on Twitter to major political events and policy decisions often differs considerably from general public opinion" \cite{Desilver}.  Twitter opinions run more negative than the general public.  Twitter users are younger and lean Democratic.  Twitter is broader than most public opinion surveys because those under 18, as well as those outside the United States, can participate \cite{Mitchell}.\\
+\\
+Social media does not necessarily mean conversations in the public square.  Often it can mean two groups, in separate houses, talking among themselves.  This type of twitter conversation has been called conversation within "Polarized Crowds, where opposed groups talk about the same topic but mostly just to other group members" \cite{Desilver}.  Thus it is appropriate to run separate searches on "Trump" and "Clinton" to look at what those polarized crowds are discussing.  A search for "Obama" provides a contrast to the current candidates.\\
+\\
+Research of tweets is not easily used to predict an election result, as the users of twitter represent a biased sample of the population \cite{Gayo-Avello}.  But tweets can still reflect what issues and values are important to each side, how those conflicts rise and fall during the election, and the reaction to the results.\\
+\\
+
+
+\subsection{Preparing this document} This whole document is prepared using \textbf{R}  package \texttt{knitr}. It is a dynamic document and reproducible any number of times for any data sets. 
+
+
+\section{About the data} 
+
+The sample data has been added to a GitHub project and is available via a web link.
+
+The data set is a continuous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
+
+Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples \cite{Morstatter}. While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
+
+The json data provided by the public sample streaming API contains many fields and is considered structured data.
+Twitter's data objects are provided here: https://dev.twitter.com/overview/api
+
+The data used for this project comes from capturing the raw json output of sample stream. 
+
+Because of the large amount of data and the desire to analyze trends over a longer span of time than Twitter provides via its public API, it was decided to store the data in a SQL Server 2016 database. Data is parsed from JSON into a database table. The parsed data does not contain all possible fields and is indexed on the date field of the tweet.
+
+For the purposes of this document a sample of the parsed data is stored on GitHub and used for this analysis. To reproduce the data capture and transformation techniques required to get the data to this stage, refer to appendix XXX. Once in SQL Server, the parsed data is limited to only the rows desired for analysis. There are \Sexpr{nrow(dataSet)} data points and \Sexpr{ncol(dataSet)} variables in this data set. The variables are \Sexpr{names(dataSet)}. 
+
+Below is a function defining the to call the SQL Database which retreives the parsed data along with a command which assigns the result set to a local variable. The query can be modified to limit results to specific time frames or only to tweets that contain a textual value using the T-SQL syntax available in SQL Server 2016.
+
+<<echo=TRUE, eval=FALSE>>=
+GetDataSet <- function (term = NA, count = 1000) {
+  count <- format(count,scientific = FALSE)
+  library(RODBC)
+  dbhandle <- odbcConnect("MyODBCConnectionName",
+                        uid="MyUserId",
+                        pwd="MyPassword")
+  queryParts = c("SELECT TOP (",count,") [MessageId]
+                      ,[CreatedAt]
+                      ,[UserId]
+                      ,[PlaceId]
+                      ,[PlaceType]
+                      ,[PlaceName]
+                      ,[PlaceFullName]
+                      ,[PlaceCountryCode]
+                      ,[PlaceCountry]
+                      ,[PlaceBoundingBox]
+                      ,[CoordinatesType]
+                      ,[CoordinatesCoordinates]
+                      ,[Text]
+                  FROM [TwitterData].[dbo].[NewFlattenedTweets]")
+  if (!is.na(term)) {queryParts <- c(queryParts," WHERE [Text] LIKE '%",term,"%'")}
+  query <- paste(queryParts, collapse='')
+  res <- sqlQuery(dbhandle, query)
+  odbcClose(dbhandle)
+  return (res);
+}
+
+# Usage
+dataSet <- GetDataSet("Trump",10000);
+@
+
+
+\subsection{Preparing data}
+
+The most salient value of this data is with the combination of the words of the tweet and the geographic information included with the tweets. In order to prepare the data for textual analysis which includes word frequency counts, word relationships, and word sentiment, it will take the form of a corpus. The corpus structure used for this analysis is part of the tm package.
+
+Before the textual data can be used, it must be prepared by stripping out characters that interfere with english word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function named TwitterToCorpus and passed a character vector consisting of the tweet text.
+
+The TwitterToCorpus function will first remove any references to the original search term, if given. It will then covert the text to lower case. Next it removes any URLs. Then it removes any Twitter mentions. Numbers and stopwords are removed next, along with any punctuation. Finally, any non-aplha characters are replaces with a space and redundant whitespace is stripped from the data.
+
+<<echo=FALSE,warning=FALSE>>=
+# Of the sample datasets available on the Github account, the Trump set is selected.
+
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_100K.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Clinton.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Hillary.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Obama.csv')
+dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
+
+library(NLP)
+library(tm)
+
+TwitterToCorpus <- function(twitterData, searchTerm = NULL) {
+  # Load the NLP library
+  #library(tm)
+  
+  if (exists('searchTerm') && (is.null(searchTerm)==FALSE)){
+    searchTerm <- tolower(searchTerm)
+  }
+  else {
+    searchTerm <- 'NOTPOSSIBLE'
+  }
+  # Load the tweet text
+  corpusData <- as.character(twitterData)
+  #corpusData <- as.character(dataSet$Text)
+  
+  # Convert the character vector to a Corpus object
+  myCorpus <- Corpus(VectorSource(corpusData))
+  
+  # Convert the text to lower case
+  myCorpus <- tm_map(myCorpus, content_transformer(tolower))
+  
+  # Remove URL's from corpus
+  removeURL <-
+    content_transformer(function(x)
+      gsub(" ?(f|ht)(tp)(s?)(://)(.*)[.|/](.*)", " ", x))
+  myCorpus <- tm_map(myCorpus, removeURL)
+  
+  # Remove mentions (this may or may not be desired based on the type of anyalysis)
+  removeMentions <-
+    content_transformer(function(x)
+      gsub("(\\b\\S*@|@)\\S*\\b", " ", x))
+  myCorpus <- tm_map(myCorpus, removeMentions)
+  
+  # Remove numbers
+  myCorpus <- tm_map(myCorpus, removeNumbers)
+  
+  # Remove common stopwords
+  # Specify additional stopwords or stems as a character vector
+  myExtraStopwords <-
+    c("available", "via", "amp", "get", "com", "pra", "just")
+  myStopwords <- c(stopwords("english"), stopwords("spanish"), myExtraStopwords)
+  myCorpus <- tm_map(myCorpus, removeWords, myStopwords)
+  
+  # Remove punctuations
+  myCorpus <- tm_map(myCorpus, removePunctuation)
+  
+  # Replace all characters that are not in a-z with a space
+  removeNonLowerAlpha <-
+    content_transformer(function(x)
+      gsub("[^a-z]", " ", x))
+  myCorpus <- tm_map(myCorpus, removeNonLowerAlpha)
+  
+  # Remove all terms that contain the search term
+  pattern <- paste("\\b\\S*", searchTerm, "\\S*\\b", sep = '')
+  removeSearchTermWild <-
+    content_transformer(function(x)
+      gsub(pattern, " ", x))
+  
+  myCorpus <- tm_map(myCorpus, removeSearchTermWild)
+  
+  
+  # Eliminate extra white spaces
+  myCorpus <- tm_map(myCorpus, stripWhitespace)
+
+  return (myCorpus)
+}
+
+# Get the cleaned corpus
+myCorpus <- TwitterToCorpus(dataSet$Text,'Trump')
+
+#as.character(myCorpus[[550]])
+@
+
+Now the corpus is ready for use. The corpus will be stemmed which associates words with their most basic root so that terms like 'women' and 'woman' will show up as the same word, 'wom.'
+
+<<echo=FALSE>>=
+# Make a copy of the corpus
+myCorpusCopy <- myCorpus
+
+# Text stemming
+#myCorpus <- tm_map(myCorpus, stemDocument)
+
+# Stem Stuff
+#myCorpus <- tm_map(myCorpus, stripWhitespace)
+#myCorpus <- tm_map(myCorpus,PlainTextDocument)
+#inspect(myCorpus)
+@
+
+Once the text is stemmed and tied back to a reference of the original, unstemmed corpus, it is ready to examine the frequency of words. An out of memory issue will arise when trying to transform a TermDocumentMatrix into a standard R matrix. To overcome this issue, the slam package is used. The problem stems from the fact that, in a very large data matrix where, conceptually, each word represents a row and each column represents a document (each of the tweets is considered a document) the value of that intersection is the frequency for that word in that particular document. In this case, the matrix is large and very sparse XXX (show example of sparseness ratio) XXX. The slam package allows the matrix to be "rolled up" by collapsing each column of data using a function such as sum without first converting the source data into a matrix.
+
+<<echo=FALSE>>=
+# Word Frequency
+tdm <- TermDocumentMatrix(myCorpusCopy)
+dtm <- DocumentTermMatrix(myCorpusCopy)
+
+#head(findFreqTerms(dtm))
+
+# The following method may product the error:
+# Error: cannot allocate vector of size xxx Gb
+## allTermFreqs <- data.frame(unlist(rowSums(inspect(tdm[,dimnames(tdm)$Docs]))))
+## colnames(allTermFreqs) <- c('freq')
+## allTermFreqs$term <- rownames(allTermFreqs)
+## allTermFreqs.sorted <- allTermFreqs[order(allTermFreqs$freq,allTermFreqs$term),]
+## head(allTermFreqs.sorted)
+## tail(allTermFreqs.sorted)
+
+# Using the slam package, the data can be rolled up and made into a smaller matrix
+library(slam)
+tdm.rollup <- rollup(tdm, 2, na.rm=TRUE, FUN = sum)
+allTermFreqs.tdm.rollup.matrix <- as.matrix(tdm.rollup)
+rm(tdm.rollup)
+allTermFreqs.tdm.rollup.df <- data.frame(
+  rownames(allTermFreqs.tdm.rollup.matrix),
+  allTermFreqs.tdm.rollup.matrix[,1],stringsAsFactors = FALSE)
+rm(allTermFreqs.tdm.rollup.matrix)
+colnames(allTermFreqs.tdm.rollup.df) <- c('Term','Freq')
+
+allTermFreqs.tdm.rollup.df.sorted <- allTermFreqs.tdm.rollup.df[
+  order(-allTermFreqs.tdm.rollup.df$Freq,allTermFreqs.tdm.rollup.df$Term),]
+rm(allTermFreqs.tdm.rollup.df)
+
+#head(allTermFreqs.tdm.rollup.df.sorted)
+#tail(allTermFreqs.tdm.rollup.df.sorted)
+
+# topFreqWords contains the top n words that appear in this set of tweets
+topFreqWords <- head(allTermFreqs.tdm.rollup.df.sorted, 5)
+
+#allTermFreqs.tdm.rollup$term <- rownames(allTermFreqs.tdm.rollup)
+#allTermFreqs.tdm.rollup.sorted <- 
+#  allTermFreqs.tdm.rollup[
+#  order(allTermFreqs.tdm.rollup$freq,allTermFreqs.tdm.rollup$term),]
+@
+
+Now that the word counting of the corpus is complete. And the word matrix has been rolled up into a frequency data frame, we can display the most frequent words in the data set.
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+library(knitr)
+kable(topFreqWords,
+      row.names = FALSE,
+      format = "latex", 
+      booktabs = TRUE,
+      caption = 'Top words by frequency')
+
+#myDf <- data.frame(topFreqWords,stringsAsFactors = FALSE,row.names = NULL)
+#kable(myDf,format = "latex", booktabs = TRUE)
+#rm(myDf)
+@
+
+Next, we want to take a look at which words are most correlated with the top frequncy words in the data set. Using the NLP and tm packages, we can get a measure of word associations. What this means is that we will find out how commonly a word appears in the same tweet within our data set. Twitter data can yield some non-intuitive results.
+
+<<echo=FALSE,warning=FALSE,message=FALSE>>=
+library(ggplot2)
+# now that we have a list of the most frequent words, we can find the words associated with them
+
+# A .07 minimum correlation is listed here because it speeds up finding associations
+# A full set of all correlations can be found by declaring a 0 correlation level, but
+# this is time consuming and generally unnecessary.
+wordAssocs <- findAssocs(tdm, topFreqWords$Term, 0.05)
+
+# Once the associations are found, the first n most correlated terms are taken from
+# each association list.
+wordAssocs.top <- lapply(wordAssocs , '[' , 1:3 )
+
+wordAssocs.df <- NULL
+
+for (i in 1:length(wordAssocs.top)) {
+  topTerm <- names(wordAssocs.top[i])
+  df.new <- data.frame(topTerm = topTerm,
+                       relatedTerm = names(wordAssocs.top[[i]]),
+                       relatedTermAssoc = as.numeric(wordAssocs.top[[i]]),
+                       row.names = NULL)
+  wordAssocs.df <- rbind(wordAssocs.df, df.new)
+  rm(df.new)
+}
+
+wordAssocs.df$topTerm <- factor(wordAssocs.df$topTerm)
+# now the word association are in a data frame
+
+p <- ggplot(na.omit(wordAssocs.df), 
+            aes(x=relatedTerm, y=relatedTermAssoc, group = topTerm, colour=topTerm))
+p <- p + geom_point(stat="identity")
+#p <- p + facet_wrap(topTerm, scales = FALSE)
+#p <- p + facet_wrap(~topTerm)
+p <- p + coord_flip() 
+p <- p + ggtitle("Top word associations for most frequent terms")
+p <- p + xlab('Association Level')
+p <- p + ylab('Related Term')
+p <- p + theme(legend.title=element_blank())
+p
+@
+
+After the text data has been prepared, the coordinates are then pulled from the each tweet. These will be used to show the frequency of tweets pertaining to each data set.
+
+NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
+
+<<echo=FALSE>>=
+library(sp)
+library(maps)
+library(maptools)
+
+# The single argument to this function, pointsDF, is a data.frame in which:
+#   - column 1 contains the longitude in degrees (negative in the US)
+#   - column 2 contains the latitude in degrees
+
+latlong2state <- function(pointsDF) {
+  # Prepare SpatialPolygons object with one SpatialPolygon
+  # per state (plus DC, minus HI & AK)
+  states <- map('state', fill=TRUE, col="transparent", plot=FALSE)
+  IDs <- sapply(strsplit(states$names, ":"), function(x) x[1])
+  states_sp <- map2SpatialPolygons(states, IDs=IDs,
+                                   proj4string=CRS("+proj=longlat +datum=WGS84"))
+  
+  # Convert pointsDF to a SpatialPoints object 
+  pointsSP <- SpatialPoints(pointsDF, 
+                            proj4string=CRS("+proj=longlat +datum=WGS84"))
+  
+  # Use 'over' to get _indices_ of the Polygons object containing each point 
+  indices <- over(pointsSP, states_sp)
+  
+  # Return the state names of the Polygons object containing each point
+  stateNames <- sapply(states_sp@polygons, function(x) x@ID)
+  stateNames[indices]
+}
+@
+
+<<>>=
+# Prepare the data set by parsing lat long values from the bounding box and location fields
+library('rjson')
+
+dataSet[!(is.na(dataSet$PlaceBoundingBox)),'PlaceBoundingBox']
+
+head(dataSet['PlaceBoundingBox'])
+dataSet$PlaceBoundingBox <- as.character(dataSet$PlaceBoundingBox)
+head(dataSet$PlaceBoundingBox)
+
+jDat <- fromJSON(head(dataSet$PlaceBoundingBox,1))
+unlist(jDat$coordinates)[1:2]
+
+jDat <- fromJSON(dataSet$PlaceBoundingBox)
+
+sampleSet <- head(dataSet$PlaceBoundingBox)
+
+#boundingBoxToLatLong <- 
+  
+#lapply(sampleSet, function(x)  )
+#dataSet$lat <- 
+@
+
+\subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English. XXX Is it possible to figure out this percentage based on character encoding? XXX
+
+Tweets do not always provide a simple latitude, longitude to geolocate the tweet. Some contain city information, some contain a bounding box with surrounds an area where the tweet would have come from. This creates an addition layer of work in preparing the data and is due to various personal settings Twitter users adjust to control privacy levels.
+
+\section{Data product} Twitter searches were conducted on the downloaded data based on three terms: Trump, Clinton, and Obama.  The draft will focus on one search, Trump, for explanatory purposes.  A series of commands are executed to turn the messy text data into relatively clean data.
+
+
+<<echo=FALSE>>= 
+#fa <- findAssocs(tdm, "women", 0.07)
+#fa.df <- as.data.frame(head(fa,10))
+
+associationSearchWord <- "women"
+wordAssocs <- findAssocs(tdm, associationSearchWord, 0.07)
+
+# Once the associations are found, the first n most correlated terms are taken from
+# each association list.
+wordAssocs.top <- lapply(wordAssocs , '[' , 1:10 )
+
+wordAssocs.df <- data.frame(
+                     relatedTerm = names(wordAssocs.top[[1]]),
+                     relatedTermAssoc = as.numeric(wordAssocs.top[[1]]),
+                     row.names = NULL)
+  
+p <- ggplot(wordAssocs.df, 
+            aes(x=relatedTerm, y=relatedTermAssoc, group = topTerm, colour=topTerm))
+p <- p + geom_point(stat="identity")
+#p <- p + facet_wrap(topTerm, scales = FALSE)
+#p <- p + facet_wrap(~topTerm)
+p <- p + coord_flip() 
+p <- p + ggtitle(paste("Top word associations for Trump related to",associationSearchWord))
+p <- p + xlab('Association Level')
+p <- p + ylab('Related Term')
+p <- p + theme(legend.title=element_blank())
+p
+@
+
+This data will then be mapped to show it's location. Below is a rough plotting of the given data.
+
+NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
+NOTE: IT IS MEANT TO GENERATE A MAP OF TWEET LOCATIONS
+
+<<>>=
+#library(maps)
+#map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
+#points(x.cord,y.cord, col="red", pch=16)
+@
+
+
+\section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
+
+
+
+\section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
+
+\subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
+
+<<>>=
+#dailyCounts <- read.csv("counts_wide.csv")
+dailyCounts <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/counts_wide.csv')
+head(dailyCounts)
+library(knitr)
+kable(dailyCounts, format = 'latex', booktabs = TRUE)
+@
+
+\subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
+<<>>=
+# TODO : DENNIS has updated code for this section
+
+tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+
+library(ggplot2)
+highfreq <- tail(allTermFreqs.tdm.rollup.df.sorted, 20)
+highfreq <- highfreq[order(-highfreq$freq),]
+highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$freq)])
+ggplot(highfreq, aes(freq, term)) +  geom_point()
+@
+
+\section{Conclusion} 
+
+Initial trends that we have seen some evidence of Trump dominates twitter. Table of daily tweets mentioning Trump total more than three times tweets mentioning Clinton.  Trump’s count is approximately twelve times greater than Obama’s count.  With the negativity of twitter, domination of negativity is not necessarily a good thing. \\
+
+Obama seems to be viewed more positively than either candidate. We have had mixed results with word clouds, in terms of finding things that are interesting.  We will also try dot plots. Words associated with “women” is one of the more interesting word associations in this election. Tremendously negative for Trump, negative in a more normal way for Clinton, and mostly positive for Obama. When we find things that are interesting, we hope to also show how those aspects changed over the course of the roughly six weeks of data that we will have. \\
+
+We have had the hardest time working on maps.  Our hope is to show some data by state, to see if important geographical differences in the election are apparent in twitter. \\
+
+\section{Appendix}
+
+The SQL Server table schema
+
+\begin{verbatim}
+USE [TwitterData]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[NewFlattenedTweets](
+	[MessageId] [bigint] NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[UserId] [bigint] NULL,
+	[PlaceId] [nvarchar](350) NULL,
+	[PlaceType] [nvarchar](350) NULL,
+	[PlaceName] [nvarchar](350) NULL,
+	[PlaceFullName] [nvarchar](350) NULL,
+	[PlaceCountryCode] [nvarchar](10) NULL,
+	[PlaceCountry] [nvarchar](350) NULL,
+	[PlaceBoundingBox] [nvarchar](350) NULL,
+	[CoordinatesType] [nvarchar](350) NULL,
+	[CoordinatesCoordinates] [nvarchar](350) NULL,
+	[Text] [nvarchar](max) NULL,
+ CONSTRAINT [PK_NewFlattenedTweets] PRIMARY KEY CLUSTERED 
+(
+	[MessageId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, 
+    IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, 
+    ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+\end{verbatim}
+
+A sample of inserting data from twitter json source file into table.
+
+\begin{verbatim}create table #tempTweets(Json nvarchar(max))
+
+BULK INSERT #tempTweets --RawTweetJson
+FROM 'C:\Share\Tweets_20161013_clean.json'
+
+select count(*) from #tempTweets
+select top 10 * from #tempTweets
+
+  --SELECT MAX(LEN(JSON_VALUE([Json], '$.text'))) [Text]
+  --FROM #tempTweets TT
+
+
+INSERT INTO NewFlattenedTweets
+(     [MessageId]
+	    ,[CreatedAt]
+      ,[UserId]--18
+	    ,[PlaceId]
+      ,[PlaceType]
+      ,[PlaceName]
+      ,[PlaceFullName]
+      ,[PlaceCountryCode]
+      ,[PlaceCountry]
+      ,[PlaceBoundingBox]
+      ,[CoordinatesType]
+      ,[CoordinatesCoordinates]
+      ,[Text])--545
+SELECT DISTINCT
+       CAST(JSON_VALUE([Json], '$.id') AS BIGINT)		MessageId
+	  --JSON_VALUE([Json], '$.created_at') CreatedAt
+	  ,CONVERT(DATETIME,SUBSTRING(JSON_VALUE([Json], '$.created_at'),4,7) + 
+			SUBSTRING(JSON_VALUE([Json], '$.created_at'),26,5) + 
+			SUBSTRING(JSON_VALUE([Json], '$.created_at'),11,9)) 
+				CreatedAt
+	  
+	  ,CAST(JSON_VALUE([Json], '$.user.id') AS BIGINT)	UserId
+	  ,CAST(JSON_VALUE([Json], '$.place.id') AS NVARCHAR(350)) PlaceId
+	  ,CAST(JSON_VALUE([Json], '$.place.place_type') AS NVARCHAR(350)) PlaceType
+	  ,CAST(JSON_VALUE([Json], '$.place.name') AS NVARCHAR(350)) PlaceName
+	  ,CAST(JSON_VALUE([Json], '$.place.full_name') AS NVARCHAR(350)) PlaceFullName
+	  ,CAST(JSON_VALUE([Json], '$.place.country_code') AS NVARCHAR(10)) PlaceCountryCode
+	  ,CAST(JSON_VALUE([Json], '$.place.country') AS NVARCHAR(350)) PlaceCountry
+	  ,CAST(JSON_QUERY([Json], '$.place.bounding_box') AS NVARCHAR(350)) PlaceBoundingBox
+	  ,CAST(JSON_VALUE([Json], '$.coordinates.type') AS NVARCHAR(350)) CoordinatesType
+	  ,CAST(JSON_QUERY([Json], '$.coordinates.coordinates') AS NVARCHAR(350)) CoordinatesCoords
+	  ,CAST(JSON_VALUE([Json], '$.text') AS NVARCHAR(140)) [Text]
+  FROM #tempTweets TT
+  WHERE JSON_VALUE([Json], '$.created_at') IS NOT NULL
+  AND CAST(JSON_VALUE([Json], '$.id') AS BIGINT) NOT IN (
+	  SELECT MessageId 		  
+	  FROM [TwitterData].[dbo].[NewFlattenedTweets]
+  )
+  
+drop table #tempTweets
+\end{verbatim}
+
+{\RaggedRight
+\begin{thebibliography}{99}
+
+% Some bibitems were causing compile issues and are currently commented out until it can be resolved.
+
+\bibitem{Desilver} Desilver, Drew. "5 facts about Twitter at age 10". \emph{Pew Research}, url{http://www.pewresearch.org/fact-tank/2016/03/18/5-facts-about-twitter-at-age-10/} . 2016
+    
+\bibitem{Gayo-Avello} Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
+
+\bibitem{R-base} Giachanou, Anastasia, and Fabio Crestani. "Like It or Not: A Survey of Twitter Sentiment Analysis Methods." \emph{ACM Computing Surveys} 49.2 (2016): 28-28:41. \emph{Business Source Elite}.
+
+\bibitem{Kodali} Kodali, Teja. "Building Wordclouds in R". 2015. url{https://www.r-bloggers.com/building-wordclouds-in-r/}
+
+\bibitem{Mitchell} Mitchell, Amy and Paul Hitlin. "Events Often at Odds with Overall Public Opinion". \emph{Pew Research}. 2013. url{HTTP://WWW.PEWRESEARCH.ORG/2013/03/04/TWITTER-REACTION-TO-EVENTS-OFTEN-AT-ODDS-WITH-OVERALL-PUBLIC-OPINION/}
+  
+\bibitem{Morstatter} Morstatter, Fred, Jürgen Pfeffer, Huan Liu, I\& Kathleen M. Carley. "Is the Sample Good Enough? Comparing Data from Twitter's Streaming API with Twitter's Firehose". arXiv:1306.5204 [cs.SI]. 2013. url{https://arxiv.org/abs/1306.5204}
+  
+%\bibitem{TextMiningSteps} url{http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know}
+
+%\bibitem{RTwitterAnalysis} url{http://www.slideshare.net/rdatamining/text-mining-with-r-an-analysis-of-twitter-data}
+
+%\bibitem{NonEnglishWords} Remove non-english words url{http://stackoverflow.com/questions/18153504/removing-non-english-text-from-corpus-in-r-using-tm}
+
+%\bibitem{LatLongFunc} emph{Converting lat and long to state value} url{http://stackoverflow.com/questions/8751497/latitude-longitude-coordinates-to-state-code-in-r}
+
+%\bibitem{TextMiningWalkthrough} TextMining. url{https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html}
+
+%\bibitem{TweetApp} url{https://www.csc.ncsu.edu/faculty/healey/tweet_viz/tweet_app/}
+
+
+
+\end{thebibliography}
+}
+
+
+\end{document}  
