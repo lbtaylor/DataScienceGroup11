@@ -112,72 +112,80 @@ The most salient value of this data is with the combination of the words of the 
 Before the textual data can be used, it must be prepared by stripping out characters that interfere with english word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function and passed a character vector consisting of the tweet text.
 
 <<>>=
-TwitterToCorpus <- function(x) {
-    # Load the NLP library
-    library(tm)
+dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
 
-#    corpusData <- as.character(x)
-    corpusData <- as.character(dataSet$Text)
-    
-    #remove non-english characters
-    ##enCorpusData <- iconv(corpusData, "UTF-8", "ASCII", sub="")
-    
-    #head(enCorpusData)
-   
-    # Convert the character vector to a Corpus object
-    ##myCorpus <- Corpus(VectorSource(enCorpusData))
-    myCorpus <- Corpus(VectorSource(corpusData))
-    #inspect(myCorpus)
-    
-    # Convert the text to lower case
-    myCorpus <- tm_map(myCorpus, content_transformer(tolower))
-    
-    # Remove URL's from corpus
-    removeURL <- content_transformer(function(x) gsub(" ?(f|ht)(tp)(s?)(://)(.*)[.|/](.*)"," ",x))
-    myCorpus <- tm_map(myCorpus, removeURL)
-    
-    # Remove mentions (this may or may not be desired based on the type of anyalysis)
-    removeMentions <- content_transformer(function(x) gsub("(\\b\\S*@|@)\\S*\\b"," ",x))
-    myCorpus <- tm_map(myCorpus, removeMentions)
-    
-    # Convert special characters to spaces in the corpus
-    #toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
-    #myCorpus <- tm_map(myCorpus, toSpace, "/")
-    #myCorpus <- tm_map(myCorpus, toSpace, "@")
-    #myCorpus <- tm_map(myCorpus, toSpace, "\\|")
-    
-    # Remove numbers
-    myCorpus <- tm_map(myCorpus, removeNumbers)
-    
-    # Remove common stopwords
-    # Specify additional stopwords or stems as a character vector
-    myExtraStopwords <- c("available","via","amp","get","com","pra","just")
-    myStopwords <- c(stopwords("english"), stopwords("spanish"),myExtraStopwords)
-    myCorpus <- tm_map(myCorpus, removeWords, myStopwords)
-    
-    # Remove punctuations
-    myCorpus <- tm_map(myCorpus, removePunctuation)
-    
-    # Remove all terms that contain the search term 
-    removeNonLowerAlpha <- content_transformer(function(x) gsub("[^a-z]"," ",x))
-    myCorpus <- tm_map(myCorpus, removeNonLowerAlpha)
-    
-    # Remove all non a-z chars
-    removeSearchTermWild <- 
-      content_transformer(function(x) gsub("\\b\\S*trump\\S*\\b"," ",x))
-    
-    myCorpus <- tm_map(myCorpus, removeSearchTermWild)
+library(tm)
 
-    # Eliminate extra white spaces
-    myCorpus <- tm_map(myCorpus, stripWhitespace)
-    
-    findFreqTerms(TermDocumentMatrix(myCorpus))
-   return (myCorpus)
+TwitterToCorpus <- function(twitterData, searchTerm = NULL) {
+  # Load the NLP library
+  library(tm)
+  
+  if (exists('searchTerm') && (is.null(searchTerm)==FALSE)){
+    searchTerm <- tolower(searchTerm)
+  }
+  else {
+    searchTerm <- 'NOTPOSSIBLE'
+  }
+  # Load the tweet text
+  corpusData <- as.character(twitterData)
+  #corpusData <- as.character(dataSet$Text)
+  
+  # Convert the character vector to a Corpus object
+  myCorpus <- Corpus(VectorSource(corpusData))
+  
+  # Convert the text to lower case
+  myCorpus <- tm_map(myCorpus, content_transformer(tolower))
+  
+  # Remove URL's from corpus
+  removeURL <-
+    content_transformer(function(x)
+      gsub(" ?(f|ht)(tp)(s?)(://)(.*)[.|/](.*)", " ", x))
+  myCorpus <- tm_map(myCorpus, removeURL)
+  
+  # Remove mentions (this may or may not be desired based on the type of anyalysis)
+  removeMentions <-
+    content_transformer(function(x)
+      gsub("(\\b\\S*@|@)\\S*\\b", " ", x))
+  myCorpus <- tm_map(myCorpus, removeMentions)
+  
+  # Remove numbers
+  myCorpus <- tm_map(myCorpus, removeNumbers)
+  
+  # Remove common stopwords
+  # Specify additional stopwords or stems as a character vector
+  myExtraStopwords <-
+    c("available", "via", "amp", "get", "com", "pra", "just")
+  myStopwords <- c(stopwords("english"), stopwords("spanish"), myExtraStopwords)
+  myCorpus <- tm_map(myCorpus, removeWords, myStopwords)
+  
+  # Remove punctuations
+  myCorpus <- tm_map(myCorpus, removePunctuation)
+  
+  # Replace all characters that are not in a-z with a space
+  removeNonLowerAlpha <-
+    content_transformer(function(x)
+      gsub("[^a-z]", " ", x))
+  myCorpus <- tm_map(myCorpus, removeNonLowerAlpha)
+  
+  # Remove all terms that contain the search term
+  pattern <- paste("\\b\\S*", searchTerm, "\\S*\\b", sep = '')
+  removeSearchTermWild <-
+    content_transformer(function(x)
+      gsub(pattern, " ", x))
+  
+  myCorpus <- tm_map(myCorpus, removeSearchTermWild)
+  
+  
+  # Eliminate extra white spaces
+  myCorpus <- tm_map(myCorpus, stripWhitespace)
+
+  return (myCorpus)
 }
 
+# Get the cleaned corpus
 myCorpus <- TwitterToCorpus(dataSet$Text)
 
-#inspect(myCorpus)
+as.character(myCorpus[[550]])
 @
 
 Now the corpus is ready for use. The corpus will be stemmed which associates words with their most basic root so that terms like 'women' and 'woman' will show up as the same word, 'wom.'
@@ -187,11 +195,11 @@ Now the corpus is ready for use. The corpus will be stemmed which associates wor
 myCorpusCopy <- myCorpus
 
 # Text stemming
-myCorpus <- tm_map(myCorpus, stemDocument)
+#myCorpus <- tm_map(myCorpus, stemDocument)
 
 # Stem Stuff
-myCorpus <- tm_map(myCorpus, stripWhitespace)
-myCorpus <- tm_map(myCorpus,PlainTextDocument)
+#myCorpus <- tm_map(myCorpus, stripWhitespace)
+#myCorpus <- tm_map(myCorpus,PlainTextDocument)
 #inspect(myCorpus)
 @
 
@@ -231,16 +239,54 @@ rm(allTermFreqs.tdm.rollup.df)
 head(allTermFreqs.tdm.rollup.df.sorted)
 tail(allTermFreqs.tdm.rollup.df.sorted)
 
+# topFreqWords contains the top n words that appear in this set of tweets
+topFreqWords <- tail(allTermFreqs.tdm.rollup.df.sorted, 10)
+
 #allTermFreqs.tdm.rollup$term <- rownames(allTermFreqs.tdm.rollup)
 #allTermFreqs.tdm.rollup.sorted <- 
 #  allTermFreqs.tdm.rollup[
 #  order(allTermFreqs.tdm.rollup$freq,allTermFreqs.tdm.rollup$term),]
 @
 
+<<>>=
+# now that we have a list of the most frequent words, we can find the words associated with them
+
+# A .07 minimum correlation is listed here because it speeds up finding associations
+# A full set of all correlations can be found by declaring a 0 correlation level, but
+# this is time consuming and generally unnecessary.
+wordAssocs <- findAssocs(tdm, topFreqWords$term, 0.07)
+
+# Once the associations are found, the first n most correlated terms are taken from
+# each association list.
+wordAssocs.top <- lapply(wordAssocs , '[' , 1:10 )
+
+wordAssocs.df <- NULL
+
+for (i in 1:length(wordAssocs.top)) {
+  topTerm <- names(wordAssocs.top[i])
+  df.new <- data.frame(topTerm = topTerm,
+                       relatedTerm = names(wordAssocs.top[[i]]),
+                       relatedTermAssoc = as.numeric(wordAssocs.top[[i]]),
+                       row.names = NULL)
+  wordAssocs.df <- rbind(wordAssocs.df, df.new)
+  rm(df.new)
+}
+
+wordAssocs.df$topTerm <- factor(wordAssocs.df$topTerm)
+# now the word association are in a data frame
+
+p <- ggplot(wordAssocs.df, aes(x=relatedTerm, y=relatedTermAssoc, group = topTerm, colour=topTerm))
+p <- p + geom_point(stat="identity")
+p <- p + facet_wrap(topTerm, scales = FALSE)
+p <- p + coord_flip()
+p
+@
 NOTE: THIS SECTION WILL HAVE A TABLE WITH DATA SUMMARY INFORMATION
 NOTE: THE STANDARD R SUMMARY IS TOO VERBOSE FOR A PAPER
 
 <<>>=
+#TODO : Display a table of terms and freqencies
+
 #summary(dataSet)
 @
 
@@ -248,38 +294,57 @@ After the text data has been prepared, the coordinates are then pulled from the 
 
 NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 
+<<echo=FALSE>>=
+library(sp)
+library(maps)
+library(maptools)
+
+# The single argument to this function, pointsDF, is a data.frame in which:
+#   - column 1 contains the longitude in degrees (negative in the US)
+#   - column 2 contains the latitude in degrees
+
+latlong2state <- function(pointsDF) {
+  # Prepare SpatialPolygons object with one SpatialPolygon
+  # per state (plus DC, minus HI & AK)
+  states <- map('state', fill=TRUE, col="transparent", plot=FALSE)
+  IDs <- sapply(strsplit(states$names, ":"), function(x) x[1])
+  states_sp <- map2SpatialPolygons(states, IDs=IDs,
+                                   proj4string=CRS("+proj=longlat +datum=WGS84"))
+  
+  # Convert pointsDF to a SpatialPoints object 
+  pointsSP <- SpatialPoints(pointsDF, 
+                            proj4string=CRS("+proj=longlat +datum=WGS84"))
+  
+  # Use 'over' to get _indices_ of the Polygons object containing each point 
+  indices <- over(pointsSP, states_sp)
+  
+  # Return the state names of the Polygons object containing each point
+  stateNames <- sapply(states_sp@polygons, function(x) x@ID)
+  stateNames[indices]
+}
+@
+
 <<>>=
-# This section is not currently working as expected.
+# Prepare the data set by parsing lat long values from the bounding box and location fields
+library('rjson')
 
-<<<<<<< HEAD
-#x <- read.csv("https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv")
-<<<<<<< HEAD
-#xx <- x[!is.na(x[11]),]
-#head(xx)
-#xx <- xx[11]
-#head(xx)
-#xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
-=======
-xx <- as.character(dataSet[,!is.na(dataSet[11])])
+dataSet[!(is.na(dataSet$PlaceBoundingBox)),'PlaceBoundingBox']
 
-bbSubset <- as.character(dataSet[is.na(dataSet[11]),11])
-=======
-#x <- dataSet
-#xx <- x[!is.na(x[11]),]
->>>>>>> dennis-friday
-#head(xx)
-#xx <- xx[11]
-#head(xx)
-<<<<<<< HEAD
-xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
->>>>>>> master
-=======
-#xx <- as.numeric(unlist(regmatches(xx,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",xx))))
->>>>>>> dennis-friday
-#xx <- as.numeric(unlist(regmatches(x[10],gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
-#x.cord <- xx[seq.int(1, length(xx), 8)]
-#y.cord <- xx[seq.int(2, length(xx), 8)]
-#df.cord <- data.frame(x.cord,y.cord)
+head(dataSet['PlaceBoundingBox'])
+dataSet$PlaceBoundingBox <- as.character(dataSet$PlaceBoundingBox)
+head(dataSet$PlaceBoundingBox)
+
+jDat <- fromJSON(head(dataSet$PlaceBoundingBox,1))
+unlist(jDat$coordinates)[1:2]
+
+jDat <- fromJSON(dataSet$PlaceBoundingBox)
+
+sampleSet <- head(dataSet$PlaceBoundingBox)
+
+#boundingBoxToLatLong <- 
+  
+lapply(sampleSet, function(x)  )
+#dataSet$lat <- 
 @
 
 \subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English. XXX Is it possible to figure out this percentage based on character encoding? XXX
@@ -289,72 +354,7 @@ Tweets do not always provide a simple latitude, longitude to geolocate the tweet
 \section{Data product} Twitter searches were conducted on the downloaded data based on three terms: Trump, Clinton, and Obama.  The draft will focus on one search, Trump, for explanatory purposes.  A series of commands are executed to turn the messy text data into relatively clean data.
 
 <<>>=
-library(wordcloud)
-library(tm)
-library(SnowballC)
-library(RODBC)
-library(ggplot2)
-library(plyr)
-library(RColorBrewer)
 
-# Sample set used for purpose of paper
-dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
-
-corpusData <- as.character(dataSet)
-enCorpusData <- iconv(corpusData, "UTF-8", "ASCII", sub="")
-
-library(tm)
-
-myCorpus <- Corpus(VectorSource(enCorpusData))
-#inspect(myCorpus)
-
-myCorpus <- tm_map(myCorpus, content_transformer(tolower))
-
-removeURL <- content_transformer(function(x) gsub(" ?(f|ht)(tp)(s?)(://)(.*)[.|/](.*)","",x))
-myCorpus <- tm_map(myCorpus, removeURL)
-
-toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
-myCorpus <- tm_map(myCorpus, toSpace, "/")
-myCorpus <- tm_map(myCorpus, toSpace, "@")
-myCorpus <- tm_map(myCorpus, toSpace, "\\|")
-
-myCorpus <- tm_map(myCorpus, removeNumbers)
-
-myExtraStopwords <- c("available","via","amp","get","com","pra","just")
-myStopwords <- c(stopwords("english"), stopwords("spanish"),myExtraStopwords)
-myCorpus <- tm_map(myCorpus, removeWords, myStopwords)
-
-myCorpus <- tm_map(myCorpus, removePunctuation)
-
-myCorpus <- tm_map(myCorpus, stripWhitespace)
-
-myCorpusCopy <- myCorpus
-
-myCorpus <- tm_map(myCorpus, stemDocument)
-
-myCorpus <- tm_map(myCorpus, stripWhitespace)
-myCorpus <- tm_map(myCorpus,PlainTextDocument)
-
-tdm <- TermDocumentMatrix(myCorpus)
-dtm <- DocumentTermMatrix(myCorpus)
-
-idx <- which(dimnames(tdm)$Terms == "obama")
-
-findFreqTerms(dtm,lowfreq = 100)
-
-library(slam)
-tdm.rollup <- rollup(tdm, 2, na.rm=TRUE, FUN = sum)
-allTermFreqs.tdm.rollup.matrix <- as.matrix(tdm.rollup)
-rm(tdm.rollup)
-allTermFreqs.tdm.rollup.df <- data.frame(rownames(allTermFreqs.tdm.rollup.matrix),allTermFreqs.tdm.rollup.matrix[,1],stringsAsFactors = FALSE)
-rm(allTermFreqs.tdm.rollup.matrix)
-colnames(allTermFreqs.tdm.rollup.df) <- c('term','freq')
-
-allTermFreqs.tdm.rollup.df.sorted <- allTermFreqs.tdm.rollup.df[order(allTermFreqs.tdm.rollup.df$freq,allTermFreqs.tdm.rollup.df$term),]
-rm(allTermFreqs.tdm.rollup.df)
-
-tail(allTermFreqs.tdm.rollup.df.sorted)
-head(allTermFreqs.tdm.rollup.df.sorted)
 @
 
 <<>>= 
