@@ -31,14 +31,14 @@ library(knitr)
 dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
 @
 
-\begin{abstract}Language is always evolving. As the internet, and especially social media, has increased the availability and immediateness of communication to being able to share a thought with everyone in an instant, everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Trends are defined as the most frequent words or topics discussed in Twitter messages (tweets) over time or by area. Extensive cleaning of data will occur so that searches for trends can occur. These trends in turn will become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.\\\\
+\begin{abstract} Social media has increased the availability and immediateness of communication. Everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Trends are defined as the most frequent words or topics discussed in Twitter messages over time or by area. Extensive cleaning of data is necessary so that searches for trends can occur. These trends in turn become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.  The methods used will be applicable to any topic of interest that someone wishes to explore in the future.
 \end{abstract}
 
 %\tableofcontents
 
 \section{Introduction} 
 
-What does a twitter analysis tell us about the 2016 Presidential election?  In a Presidential election many pieces of data are analyzed to determine strategy and behavior.  Polls, voting history, television reports, and newspaper reports all come into play.  In recent years social media has become part of the mix.  Analysis of twitter activity can provide another window into what is happening in the election and why.  \\
+What does an analysis of Twitter data tell us about the 2016 Presidential election?  In a Presidential election many pieces of data are analyzed to determine strategy and behavior.  Polls, voting history, television reports, and newspaper reports all come into play.  In recent years, social media has become part of the mix.  Analysis of Twitter activity can provide another window into what is happening in the election and why.  \\
 \\
 Twitter is a popular and important social media platform.  Twitter had 320 million monthly active users worldwide in the last quarter of 2015.  65 million of those were in the United States, or 1 in 5 Americans.  Usage is highest with adults under age 50, residents of cities, and upper-income Americans \cite{Desilver}.\\
 \\
@@ -46,31 +46,27 @@ Twitter reflects the attitudes only of certain subsets of the United States popu
 \\
 Social media does not necessarily mean conversations in the public square.  Often it can mean two groups, in separate houses, talking among themselves.  This type of twitter conversation has been called conversation within "Polarized Crowds, where opposed groups talk about the same topic but mostly just to other group members" \cite{Desilver}.  Thus it is appropriate to run separate searches on "Trump" and "Clinton" to look at what those polarized crowds are discussing.  A search for "Obama" provides a contrast to the current candidates.\\
 \\
-Research of tweets is not easily used to predict an election result, as the users of twitter represent a biased sample of the population \cite{Gayo-Avello}.  But tweets can still reflect what issues and values are important to each side, how those conflicts rise and fall during the election, and the reaction to the results.\\
+Research of tweets is not easily used to predict an election result, as the users of Twitter represent a biased sample of the population \cite{Gayo-Avello}.  But tweets can still reflect what issues and values are important to each side.\\
 \\
 
+\section{Data Collection} 
 
-\subsection{Preparing this document} This whole document is prepared using \textbf{R}  package \texttt{knitr}. It is a dynamic document and reproducible any number of times for any data sets. 
-
-
-\section{About the data} 
-
-The sample data has been added to a GitHub project and is available via a web link.
-
-The data set is a continuous json stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.
-
-Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples \cite{Morstatter}. While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.
-
-The json data provided by the public sample streaming API contains many fields and is considered structured data.
+A representative set of sample data has been added to a GitHub project and is available via a web link visible in the source code for this paper.\\
+\\
+The data set is a continuous JSON stream provided by the public Twitter sample API. This particular end point of the API provides a representative sample of data that a private individual may consume. This is contrasted by the private Twitter firehose stream which streams all of the Twitter statuses. By reserving the firehose API to a select few consumers with the knowledge and technology to utilize the firehose stream, Twitter limits any issues that would be caused by an average developer making a mistake while programming against the firehose API.\\
+\\
+Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples \cite{Morstatter}. While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.\\
+\\
+The JSON data provided by the public sample streaming API contains many fields and is considered structured data.
 Twitter's data objects are provided here: https://dev.twitter.com/overview/api
-
-The data used for this project comes from capturing the raw json output of sample stream. 
-
-Because of the large amount of data and the desire to analyze trends over a longer span of time than Twitter provides via its public API, it was decided to store the data in a SQL Server 2016 database. Data is parsed from JSON into a database table. The parsed data does not contain all possible fields and is indexed on the date field of the tweet.
-
-For the purposes of this document a sample of the parsed data is stored on GitHub and used for this analysis. To reproduce the data capture and transformation techniques required to get the data to this stage, refer to appendix XXX. Once in SQL Server, the parsed data is limited to only the rows desired for analysis. There are \Sexpr{nrow(dataSet)} data points and \Sexpr{ncol(dataSet)} variables in this data set. The variables are \Sexpr{names(dataSet)}. 
-
-Below is a function defining the to call the SQL Database which retreives the parsed data along with a command which assigns the result set to a local variable. The query can be modified to limit results to specific time frames or only to tweets that contain a textual value using the T-SQL syntax available in SQL Server 2016.
+The data used for this project comes from capturing the raw json output of sample stream. \\
+\\
+Because of the large amount of data and the desire to analyze trends over a longer span of time than Twitter provides via its public API, it was decided to store the data in a SQL Server 2016 database. Data is parsed from JSON into a database table. The parsed data does not contain all possible fields and is indexed on the date field of the tweet.\\
+\\
+For the purposes of this document a sample of the parsed data is stored on GitHub and used for this analysis. To reproduce the data capture and transformation techniques required to get the data to this stage, refer to the Appendix for more details. Once in SQL Server, the parsed data is limited to only the rows desired for analysis. There are \Sexpr{nrow(dataSet)} data points and \Sexpr{ncol(dataSet)} variables in this data set. The variables are \Sexpr{names(dataSet)}. \\
+\\
+Below is a function defining a call to the SQL Database which retrieves the parsed data along with a command which assigns the result set to a local variable. The query can be modified to limit results to specific time frames or only to tweets that contain a textual value using the T-SQL syntax available in SQL Server 2016.\\
+\\
 
 <<echo=TRUE, eval=FALSE>>=
 GetDataSet <- function (term = NA, count = 1000) {
@@ -104,15 +100,18 @@ GetDataSet <- function (term = NA, count = 1000) {
 dataSet <- GetDataSet("Trump",10000);
 @
 
+TODO: LUKE DESCRIBE WHAT HAPPENED 
+This study collected tweets for 23 days from September 25 to October 19, 2016.  The Twitter feed was blocked on October 19 and could not be unblocked.  This data collection and analysis is still a worthwhile study on the use of twitter data.\\
 
-\subsection{Preparing data}
 
-The most salient value of this data is with the combination of the words of the tweet and the geographic information included with the tweets. In order to prepare the data for textual analysis which includes word frequency counts, word relationships, and word sentiment, it will take the form of a corpus. The corpus structure used for this analysis is part of the tm package.
+\section{Data Preparation} 
 
-Before the textual data can be used, it must be prepared by stripping out characters that interfere with english word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function named TwitterToCorpus and passed a character vector consisting of the tweet text.
-
-The TwitterToCorpus function will first remove any references to the original search term, if given. It will then covert the text to lower case. Next it removes any URLs. Then it removes any Twitter mentions. Numbers and stopwords are removed next, along with any punctuation. Finally, any non-aplha characters are replaces with a space and redundant whitespace is stripped from the data.
-
+The most salient value of this data is with the combination of the words of the tweet and the geographic information included with the tweets. In order to prepare the data for textual analysis which includes word frequency counts, word relationships, and word sentiment, it will take the form of a corpus. The corpus structure used for this analysis is part of the \texttt{tm} package.\\
+\\
+Before the textual data can be used, it must be prepared by stripping out characters that interfere with English word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function named \texttt{TwitterToCorpus} and passed a character vector consisting of the tweet text.\\
+\\
+The \texttt{TwitterToCorpus} function first removes any references to the original search term, if given. It then coverts the text to lower case. Next it removes any URLs. Then it removes any Twitter mentions. Numbers and stopwords are removed next, along with any punctuation. Finally, any non-alpha characters are replaced with a space and redundant whitespace is stripped from the data.\\
+\\
 <<echo=FALSE,warning=FALSE>>=
 # Of the sample datasets available on the Github account, the Trump set is selected.
 
@@ -198,9 +197,9 @@ myCorpus <- TwitterToCorpus(dataSet$Text,'Trump')
 #as.character(myCorpus[[550]])
 @
 
-Now the corpus is ready for use. The corpus will be stemmed which associates words with their most basic root so that terms like 'women' and 'woman' will show up as the same word, 'wom.'
-
 <<echo=FALSE>>=
+#Now the corpus is ready for use. The corpus will be stemmed which associates words with their most basic root so that terms like 'women' and 'woman' will show up as the same word, 'wom.'
+
 # Make a copy of the corpus
 myCorpusCopy <- myCorpus
 
@@ -213,8 +212,8 @@ myCorpusCopy <- myCorpus
 #inspect(myCorpus)
 @
 
-Once the text is stemmed and tied back to a reference of the original, unstemmed corpus, it is ready to examine the frequency of words. An out of memory issue will arise when trying to transform a TermDocumentMatrix into a standard R matrix. To overcome this issue, the slam package is used. The problem stems from the fact that, in a very large data matrix where, conceptually, each word represents a row and each column represents a document (each of the tweets is considered a document) the value of that intersection is the frequency for that word in that particular document. In this case, the matrix is large and very sparse XXX (show example of sparseness ratio) XXX. The slam package allows the matrix to be "rolled up" by collapsing each column of data using a function such as sum without first converting the source data into a matrix.
-
+Now the corpus is ready to examine the frequency of words. An out of memory issue will arise when trying to transform a texttt{TermDocumentMatrix} into a standard R matrix. To overcome this issue, the texttt{slam} package is used. The problem stems from the fact that, in a very large data matrix where, conceptually, each word represents a row and each column represents a document (each of the tweets is considered a document) the value of that intersection is the frequency for that word in that particular document. In this case, the matrix is large and very sparse. The slam package allows the matrix to be "rolled up" by collapsing each column of data using a function such as sum without first converting the source data into a matrix.\\
+\\
 <<echo=FALSE>>=
 # Word Frequency
 tdm <- TermDocumentMatrix(myCorpusCopy)
@@ -258,7 +257,15 @@ topFreqWords <- head(allTermFreqs.tdm.rollup.df.sorted, 5)
 #  order(allTermFreqs.tdm.rollup$freq,allTermFreqs.tdm.rollup$term),]
 @
 
-Now that the word counting of the corpus is complete. And the word matrix has been rolled up into a frequency data frame, we can display the most frequent words in the data set.
+\section{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the Twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English.\\
+\\
+Tweets do not always provide a simple latitude, longitude to geolocate the tweet. Some contain city information, some contain a bounding box with surrounds an area where the tweet would have come from. This creates an addition layer of work in preparing the data and is due to various personal settings Twitter users adjust to control privacy levels.\\
+\\
+
+\section{Data Product}
+
+Now that the word counting of the corpus is complete, and the word matrix has been rolled up into a frequency data frame, we can display the most frequent words in the data set. Collecting word frequencies is the first step in any analysis of twitter data.  Table 1 presents the top words by frequency for tweets using the search term "Trump."\\
+\\
 
 <<echo=FALSE,eval=TRUE,results='asis'>>=
 library(knitr)
@@ -273,9 +280,10 @@ kable(topFreqWords,
 #rm(myDf)
 @
 
-Next, we want to take a look at which words are most correlated with the top frequncy words in the data set. Using the NLP and tm packages, we can get a measure of word associations. What this means is that we will find out how commonly a word appears in the same tweet within our data set. Twitter data can yield some non-intuitive results.
+Next, we want to take a look at which words are most correlated with the top frequency words in the data set. Using the texttt{NLP} and texttt{tm} packages, we can get a measure of word associations. What this means is that we will find out how commonly a word appears in the same tweet within our data set. Some results in the Top Word Associations graph tend to be unimportant.  Associated words such as "president", "watch", "tonights", and "presidential" do not lead the reader very far.  But among other word associations, "crooked" shows that the phrase "crooked Hillary" is quite prominent in the social media discussion.  The idea of polarized crowds is also apparent, as opinion leaders on each side are mentioned frequently.  Word association "realalexjones" refers to conservative radio host Alex Jones, and "amjoy" to MSNBC host Joy Ann-Reid.  Two separate reactions, rather than a discussion, are going on in social media.\\
+\\
 
-<<echo=FALSE,warning=FALSE,message=FALSE>>=
+<<echo=FALSE,warning=FALSE,message=FALSE, fig.height=4>>=
 library(ggplot2)
 # now that we have a list of the most frequent words, we can find the words associated with them
 
@@ -310,17 +318,42 @@ p <- p + geom_point(stat="identity")
 #p <- p + facet_wrap(~topTerm)
 p <- p + coord_flip() 
 p <- p + ggtitle("Top word associations for most frequent terms")
-p <- p + xlab('Association Level')
-p <- p + ylab('Related Term')
+p <- p + ylab('Association Level')
+p <- p + xlab('Related Term')
 p <- p + theme(legend.title=element_blank())
 p
 @
 
-After the text data has been prepared, the coordinates are then pulled from the each tweet. These will be used to show the frequency of tweets pertaining to each data set.
+<<echo=FALSE, fig.height=4>>= 
+#fa <- findAssocs(tdm, "women", 0.07)
+#fa.df <- as.data.frame(head(fa,10))
 
-NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
+associationSearchWord <- "woman"
+wordAssocs <- findAssocs(tdm, associationSearchWord, 0.07)
 
-<<echo=FALSE>>=
+# Once the associations are found, the first n most correlated terms are taken from
+# each association list.
+wordAssocs.top <- lapply(wordAssocs , '[' , 1:10 )
+
+wordAssocs.df <- data.frame(
+                     relatedTerm = names(wordAssocs.top[[1]]),
+                     relatedTermAssoc = as.numeric(wordAssocs.top[[1]]),
+                     row.names = NULL)
+  
+p <- ggplot(wordAssocs.df, 
+            aes(x=relatedTerm, y=relatedTermAssoc))
+p <- p + geom_point(stat="identity")
+p <- p + coord_flip() 
+p <- p + ggtitle(paste("Top word associations for Trump related to",associationSearchWord))
+p <- p + ylab('Association Level')
+p <- p + xlab('Related Term')
+#p <- p + theme(legend.title=element_blank())
+p
+@
+
+Location information is extracted from each tweet, providing a heat map of tweet sources during the time period for the given search term. This data may provide insight on topic interest by region. The tweet locations are mapped to show to show the origin of tweets relating to the given search term.\\
+
+<<echo=FALSE, warning=FALSE,message=FALSE>>=
 library(sp)
 library(maps)
 library(maptools)
@@ -356,9 +389,9 @@ fun<-function(x){
   }
 @
 
-<<>>=
+<<echo=FALSE>>=
 # Prepare the data set by parsing lat long values from the bounding box and location fields
-dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
 dataSet <- dataSet[complete.cases(dataSet$PlaceBoundingBox),] #omitting NAs
 dat <- as.character(dataSet[!(is.na(dataSet$PlaceBoundingBox)),'PlaceBoundingBox']) 
 
@@ -372,45 +405,9 @@ dataSet$State <- latlong2state(data.frame(dataSet$Lat,dataSet$Long))
 usa.dat <- dataSet[complete.cases(dataSet$State),]
 @
 
-\subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English. XXX Is it possible to figure out this percentage based on character encoding? XXX
-
-Tweets do not always provide a simple latitude, longitude to geolocate the tweet. Some contain city information, some contain a bounding box with surrounds an area where the tweet would have come from. This creates an addition layer of work in preparing the data and is due to various personal settings Twitter users adjust to control privacy levels.
-
-\section{Data product} Twitter searches were conducted on the downloaded data based on three terms: Trump, Clinton, and Obama.  The draft will focus on one search, Trump, for explanatory purposes.  A series of commands are executed to turn the messy text data into relatively clean data.
 
 
-<<echo=FALSE>>= 
-#fa <- findAssocs(tdm, "women", 0.07)
-#fa.df <- as.data.frame(head(fa,10))
-
-associationSearchWord <- "women"
-wordAssocs <- findAssocs(tdm, associationSearchWord, 0.07)
-
-# Once the associations are found, the first n most correlated terms are taken from
-# each association list.
-wordAssocs.top <- lapply(wordAssocs , '[' , 1:10 )
-
-wordAssocs.df <- data.frame(
-                     relatedTerm = names(wordAssocs.top[[1]]),
-                     relatedTermAssoc = as.numeric(wordAssocs.top[[1]]),
-                     row.names = NULL)
-  
-p <- ggplot(wordAssocs.df, 
-            aes(x=relatedTerm, y=relatedTermAssoc, group = topTerm, colour=topTerm))
-p <- p + geom_point(stat="identity")
-#p <- p + facet_wrap(topTerm, scales = FALSE)
-#p <- p + facet_wrap(~topTerm)
-p <- p + coord_flip() 
-p <- p + ggtitle(paste("Top word associations for Trump related to",associationSearchWord))
-p <- p + xlab('Association Level')
-p <- p + ylab('Related Term')
-p <- p + theme(legend.title=element_blank())
-p
-@
-
-This data will then be mapped to show it's location. Below is a rough plotting of the given data.
-
-<<>>=
+<<echo=FALSE,warning=FALSE,message=FALSE>>=
 map <- get_googlemap(center = "USA", zoom = 4)
 ggmap(map) + 
   stat_density2d(data=usa.dat, aes(x=Lat, y=Long, fill=..level.., alpha=..level..), geom="polygon", size=0.1, bins=16) +
@@ -419,24 +416,19 @@ ggmap(map) +
 @
 
 
-\section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
+\section{Conclusion} Donald Trump dominated in Twitter counts.  The number of tweets mentioning Trump outnumbered Clinton by 3.2 to 1, and outnumbered President Obama by 11.8 to 1, over the 25 day range of the sample.  Two dates stood out for exceptionally high traffic.  September 27th was the day after the first presidential debate.  October 10th was the day after the second presidential debate.  In both cases Trump mentions approximated 100,000 tweets, verssu 33,000 for Clinton, and 5,000 for President Obama.\\
 
 
-
-\section{Results} In result section you can start with an overview of what you have found during the exploration of data. 
-
-\subsection{Including tables} SECTION INCOMPLETE - WORKING ON NICE LOOKING TABLES.\\
-
-<<>>=
-#dailyCounts <- read.csv("counts_wide.csv")
+<<echo=FALSE,eval=TRUE,results='asis'>>=
 dailyCounts <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/counts_wide.csv')
-head(dailyCounts)
+#head(dailyCounts)
 library(knitr)
-kable(dailyCounts, format = 'latex', booktabs = TRUE)
+kable(dailyCounts, 
+      format = 'latex', 
+      booktabs = TRUE)
 @
 
-\subsection{Including figures} SECTION INCOMPLETE - WORKING ON PLOTS. \\
-<<>>=
+<<echo=FALSE,eval=FALSE>>=
 # TODO : DENNIS has updated code for this section
 
 tail(allTermFreqs.tdm.rollup.df.sorted, 20)
@@ -448,13 +440,11 @@ highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$fre
 ggplot(highfreq, aes(freq, term)) +  geom_point()
 @
 
-\section{Conclusion} 
 
-Initial trends that we have seen some evidence of Trump dominates twitter. Table of daily tweets mentioning Trump total more than three times tweets mentioning Clinton.  Trump’s count is approximately twelve times greater than Obama’s count.  With the negativity of twitter, domination of negativity is not necessarily a good thing. \\
-
-Obama seems to be viewed more positively than either candidate. We have had mixed results with word clouds, in terms of finding things that are interesting.  We will also try dot plots. Words associated with “women” is one of the more interesting word associations in this election. Tremendously negative for Trump, negative in a more normal way for Clinton, and mostly positive for Obama. When we find things that are interesting, we hope to also show how those aspects changed over the course of the roughly six weeks of data that we will have. \\
-
-We have had the hardest time working on maps.  Our hope is to show some data by state, to see if important geographical differences in the election are apparent in twitter. \\
+One consideration for future research is the rise of automated programs generating tweets in favor of one candidate - so called, "twitter bots."  Samuel Woolley, the director of research at the Computational Propaganda project at Oxford University, found that one-third of all pro-Trump tweets, and one-fifth of pro-Clinton tweets, appeared to be automated \cite{Johnson}.  How can citizens learn to tell which are real opinions, and which are fake?   Who wants to engage in conversation, and who does not? \\
+\\
+The weaknesses of Twitter, and social media generally, were reflected in the 2016 election.  The election played out as it did on Twitter: two polarized groups, talking among themselves.  Twitter fails as an area of common ground.  It reflects, but also helps to create, two separate groups, each with their own set of beliefs, and even their own facts.  The future of common ground, community, and democracy depend upon finding some way to recreate the ability, and even the desire, to have face to face conversations, rather than the often faceless interactions of Twitter.\\
+\\
 
 \section{Appendix}
 
@@ -562,6 +552,8 @@ drop table #tempTweets
 \bibitem{Gayo-Avello} Gayo-Avello, Daniel. "Don't Turn Social Media into Another Literary Digest Poll." \emph{Communications of The ACM} 54.10 (2011): 121-128. \emph{Business Source Elite}.
 
 \bibitem{R-base} Giachanou, Anastasia, and Fabio Crestani. "Like It or Not: A Survey of Twitter Sentiment Analysis Methods." \emph{ACM Computing Surveys} 49.2 (2016): 28-28:41. \emph{Business Source Elite}.
+
+\bibitem{Johnson} Johnsonk, Tim. "That Pro-Trump Tweet that Made Your Blood Boil? It probably came from a bot." McClatchey News Service, November 4, 2016. url{http://www.mcclatchydc.com/news/politics-government/election/article112585668.html}
 
 \bibitem{Kodali} Kodali, Teja. "Building Wordclouds in R". 2015. url{https://www.r-bloggers.com/building-wordclouds-in-r/}
 
