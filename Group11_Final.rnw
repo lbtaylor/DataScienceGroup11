@@ -324,6 +324,7 @@ NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
 library(sp)
 library(maps)
 library(maptools)
+library(ggmap)
 
 # The single argument to this function, pointsDF, is a data.frame in which:
 #   - column 1 contains the longitude in degrees (negative in the US)
@@ -348,29 +349,27 @@ latlong2state <- function(pointsDF) {
   stateNames <- sapply(states_sp@polygons, function(x) x@ID)
   stateNames[indices]
 }
+
+fun<-function(x){
+  #strip out lat/long info from bounding box
+  as.numeric(unlist(regmatches(x,gregexpr("[-+]?[[:digit:]]+\\.*[[:digit:]]*",x))))
+  }
 @
 
 <<>>=
 # Prepare the data set by parsing lat long values from the bounding box and location fields
-library('rjson')
+dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
+dataSet <- dataSet[complete.cases(dataSet$PlaceBoundingBox),] #omitting NAs
+dat <- as.character(dataSet[!(is.na(dataSet$PlaceBoundingBox)),'PlaceBoundingBox']) 
 
-dataSet[!(is.na(dataSet$PlaceBoundingBox)),'PlaceBoundingBox']
+xx<-fun(dat)
+x.cord<-xx[seq.int(1, length(xx), 8)]
+y.cord<-xx[seq.int(2, length(xx), 8)]
+dataSet$Lat <-x.cord
+dataSet$Long <-y.cord
+dataSet$State <- latlong2state(data.frame(dataSet$Lat,dataSet$Long))
 
-head(dataSet['PlaceBoundingBox'])
-dataSet$PlaceBoundingBox <- as.character(dataSet$PlaceBoundingBox)
-head(dataSet$PlaceBoundingBox)
-
-jDat <- fromJSON(head(dataSet$PlaceBoundingBox,1))
-unlist(jDat$coordinates)[1:2]
-
-jDat <- fromJSON(dataSet$PlaceBoundingBox)
-
-sampleSet <- head(dataSet$PlaceBoundingBox)
-
-#boundingBoxToLatLong <- 
-  
-#lapply(sampleSet, function(x)  )
-#dataSet$lat <- 
+usa.dat <- dataSet[complete.cases(dataSet$State),]
 @
 
 \subsection{Data Challenges} There are many interesting things to be learned from the data. Although the source data from the twitter stream was limited by the query to English tweets, many tweets contained language other than English, including languages that require a the extended UTF character set to display. This indicates that although all twitter accounts were set to use English as the default language, a decent percentage of tweets were non-English. XXX Is it possible to figure out this percentage based on character encoding? XXX
@@ -411,13 +410,12 @@ p
 
 This data will then be mapped to show it's location. Below is a rough plotting of the given data.
 
-NOTE: THERE IS A SECTION OF CODE HERE THAT IS NOT YET WORKING
-NOTE: IT IS MEANT TO GENERATE A MAP OF TWEET LOCATIONS
-
 <<>>=
-#library(maps)
-#map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
-#points(x.cord,y.cord, col="red", pch=16)
+map <- get_googlemap(center = "USA", zoom = 4)
+ggmap(map) + 
+  stat_density2d(data=usa.dat, aes(x=Lat, y=Long, fill=..level.., alpha=..level..), geom="polygon", size=0.1, bins=16) +
+  scale_fill_gradient(low="red", high="yellow") + 
+  geom_point(aes(x = Lat, y = Long), data = usa.dat, colour = "blue", size = .001) 
 @
 
 
