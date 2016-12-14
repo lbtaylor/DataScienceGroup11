@@ -354,7 +354,11 @@ p <- p + theme(plot.title = element_text(size=10))
 p
 @
 
+\newpage
+
 Location information is extracted from each tweet, providing a heat map of tweet sources during the time period for the given search term. This data may provide insight on topic interest by region. The tweet locations are mapped to show to show the origin of tweets relating to the given search term.\\
+\\
+The following plot was made with \texttt{ggplot2}.
 
 <<echo=FALSE, warning=FALSE,message=FALSE>>=
 library(sp)
@@ -408,8 +412,6 @@ dataSet$State <- latlong2state(data.frame(dataSet$Lat,dataSet$Long))
 usa.dat <- dataSet[complete.cases(dataSet$State),]
 @
 
-
-
 <<echo=FALSE,warning=FALSE,message=FALSE>>=
 map <- get_googlemap(center = "USA", zoom = 4)
 ggmap(map) + 
@@ -418,6 +420,21 @@ ggmap(map) +
   geom_point(aes(x = Lat, y = Long), data = usa.dat, colour = "blue", size = .001) 
 @
 
+\newpage
+
+\begin{center}
+These plots were made externally, using \texttt{Tableau 8.3}.
+
+\includegraphics[width=400pt]{trump1.png}
+
+The above figure shows intensity of tweets per state by color.
+
+\includegraphics[width=400pt]{trump2.png}
+
+The above figure shows location and intesnity of tweets by color and size.
+\end{center}
+
+\newpage
 
 \section{Conclusion} Donald Trump dominated in Twitter counts.  The number of tweets mentioning Trump outnumbered Clinton by 3.2 to 1, and outnumbered President Obama by 11.8 to 1, over the 25 day range of the sample.  Two dates stood out for exceptionally high traffic.  September 27th was the day after the first presidential debate.  October 10th was the day after the second presidential debate.  In both cases Trump mentions approximated 100,000 tweets, verssu 33,000 for Clinton, and 5,000 for President Obama.\\
 
