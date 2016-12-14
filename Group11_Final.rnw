@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 %\usepackage[margin=1in]{geometry}   % set up margins
 \usepackage[vmargin=1in,hmargin=1in]{geometry}
 \usepackage{tikz}
@@ -6,6 +6,7 @@
 \usepackage{xcolor,listings}
 \usepackage{textcomp}
 \usepackage{ragged2e}
+\usepackage{parskip}
 
 \usepackage[backend=bibtex]{biblatex}
 
@@ -28,7 +29,8 @@ library(knitr)
 @
 
 <<echo=FALSE>>=
-dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData.csv')
+dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump50K.csv')
 @
 
 \begin{abstract} Social media has increased the availability and immediateness of communication. Everyday language now becomes abundant data that is easier than ever to source, sort and analyze. Our objective is to explore this data and identify trends in the 2016 US Presidential election. Trends are defined as the most frequent words or topics discussed in Twitter messages over time or by area. Extensive cleaning of data is necessary so that searches for trends can occur. These trends in turn become data products. Insights into emerging trends can be seen by identifying keywords and their associated words. Trends can be visualized over time and geography, because Twitter data has the ability to attach geographic information to the Tweets.  The methods used will be applicable to any topic of interest that someone wishes to explore in the future.
@@ -58,7 +60,8 @@ The data set is a continuous JSON stream provided by the public Twitter sample A
 Although the sample API does not provide all of the tweets all of the time, it does provide a representative sample of data, as heavily tweeted events tend to generate representative samples \cite{Morstatter}. While a city council campaign might not show up appropriately in the twitter sample stream, a US presidential contest should.\\
 \\
 The JSON data provided by the public sample streaming API contains many fields and is considered structured data.
-Twitter's data objects are provided here: https://dev.twitter.com/overview/api
+Twitter's data objects are provided here:\\ 
+https://dev.twitter.com/overview/api\\
 The data used for this project comes from capturing the raw json output of sample stream. \\
 \\
 Because of the large amount of data and the desire to analyze trends over a longer span of time than Twitter provides via its public API, it was decided to store the data in a SQL Server 2016 database. Data is parsed from JSON into a database table. The parsed data does not contain all possible fields and is indexed on the date field of the tweet.\\
@@ -89,7 +92,8 @@ GetDataSet <- function (term = NA, count = 1000) {
                       ,[CoordinatesCoordinates]
                       ,[Text]
                   FROM [TwitterData].[dbo].[NewFlattenedTweets]")
-  if (!is.na(term)) {queryParts <- c(queryParts," WHERE [Text] LIKE '%",term,"%'")}
+  if (!is.na(term)) {queryParts <- c(queryParts,
+                                     " WHERE [Text] LIKE '%",term,"%'")}
   query <- paste(queryParts, collapse='')
   res <- sqlQuery(dbhandle, query)
   odbcClose(dbhandle)
@@ -100,8 +104,7 @@ GetDataSet <- function (term = NA, count = 1000) {
 dataSet <- GetDataSet("Trump",10000);
 @
 
-TODO: LUKE DESCRIBE WHAT HAPPENED 
-This study collected tweets for 23 days from September 25 to October 19, 2016.  The Twitter feed was blocked on October 19 and could not be unblocked.  This data collection and analysis is still a worthwhile study on the use of twitter data.\\
+This study collected tweets for 23 days from September 25 to October 19, 2016.  The Twitter feed was interrupted on October 19 and could not be re-established.  The reason for the end of data collection was two-fold.  The source data was nearing the capacity of the server's available storage and the Twitter authorization mechanism was updated.  This data collection and analysis is still a worthwhile study on the use of Twitter data.\\
 
 
 \section{Data Preparation} 
@@ -111,7 +114,6 @@ The most salient value of this data is with the combination of the words of the 
 Before the textual data can be used, it must be prepared by stripping out characters that interfere with English word analysis. The various transformations may or may not be desired based on the type of analysis being performed. In order to encapsulate the process, it is wrapped in a function named \texttt{TwitterToCorpus} and passed a character vector consisting of the tweet text.\\
 \\
 The \texttt{TwitterToCorpus} function first removes any references to the original search term, if given. It then coverts the text to lower case. Next it removes any URLs. Then it removes any Twitter mentions. Numbers and stopwords are removed next, along with any punctuation. Finally, any non-alpha characters are replaced with a space and redundant whitespace is stripped from the data.\\
-\\
 <<echo=FALSE,warning=FALSE>>=
 # Of the sample datasets available on the Github account, the Trump set is selected.
 
@@ -120,7 +122,7 @@ The \texttt{TwitterToCorpus} function first removes any references to the origin
 #dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Clinton.csv')
 #dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Hillary.csv')
 #dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Obama.csv')
-dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
+#dataSet <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/SampleTwitterData_Trump.csv')
 
 library(NLP)
 library(tm)
@@ -196,7 +198,6 @@ myCorpus <- TwitterToCorpus(dataSet$Text,'Trump')
 
 #as.character(myCorpus[[550]])
 @
-
 <<echo=FALSE>>=
 #Now the corpus is ready for use. The corpus will be stemmed which associates words with their most basic root so that terms like 'women' and 'woman' will show up as the same word, 'wom.'
 
@@ -321,6 +322,7 @@ p <- p + ggtitle("Top word associations for most frequent terms")
 p <- p + ylab('Association Level')
 p <- p + xlab('Related Term')
 p <- p + theme(legend.title=element_blank())
+p <- p + theme(plot.title = element_text(size=10))
 p
 @
 
@@ -328,7 +330,7 @@ p
 #fa <- findAssocs(tdm, "women", 0.07)
 #fa.df <- as.data.frame(head(fa,10))
 
-associationSearchWord <- "woman"
+associationSearchWord <- "women"
 wordAssocs <- findAssocs(tdm, associationSearchWord, 0.07)
 
 # Once the associations are found, the first n most correlated terms are taken from
@@ -347,6 +349,7 @@ p <- p + coord_flip()
 p <- p + ggtitle(paste("Top word associations for Trump related to",associationSearchWord))
 p <- p + ylab('Association Level')
 p <- p + xlab('Related Term')
+p <- p + theme(plot.title = element_text(size=10))
 #p <- p + theme(legend.title=element_blank())
 p
 @
