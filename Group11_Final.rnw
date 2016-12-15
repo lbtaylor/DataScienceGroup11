@@ -281,7 +281,7 @@ kable(topFreqWords,
 #rm(myDf)
 @
 
-Next, we want to take a look at which words are most correlated with the top frequency words in the data set. Using the \texttt{NLP} and \texttt{tm} packages, we can get a measure of word associations. What this means is that we will find out how commonly a word appears in the same tweet within our data set. Some results in the Top Word Associations graph tend to be unimportant.  Associated words such as "president", "watch", "tonights", and "presidential" do not lead the reader very far.  But among other word associations, "crooked" shows that the phrase "crooked Hillary" is quite prominent in the social media discussion.  The idea of polarized crowds is also apparent, as opinion leaders on each side are mentioned frequently.  Word association "realalexjones" refers to conservative radio host Alex Jones, and "amjoy" to MSNBC host Joy Ann-Reid.  Two separate reactions, rather than a discussion, are going on in social media.\\
+Next, we want to take a look at which words are most correlated with the top frequency words in the data set. Using the \texttt{NLP} and \texttt{tm} packages, we can get a measure of word associations. What this means is that we will find out how commonly a word appears in the same tweet within our data set. Some results in the Top Word Associations graph tend to be unimportant.  Associated words such as "won", "watch", and "presidential" do not lead the reader very far. But among other word associations, "crooked" shows that the phrase "crooked Hillary" is quite prominent in the social media discussion.  We can also choose which word associations to research - often with striking and interesting results.  For example, looking for associations with the word "women" in tweets mentioning Trump, we find this list of loaded terms: pigs, slobs, dogs, treats, men, equal, labels, inferiors, enablr, and disrespected.  In general we found word associations to be more interesting than word frequencies.\\
 \\
 
 <<echo=FALSE,warning=FALSE,message=FALSE, fig.height=4>>=
@@ -425,19 +425,39 @@ ggmap(map) +
 \begin{center}
 These plots were made externally, using \texttt{Tableau 8.3}.
 
-\includegraphics[width=400pt]{trump1.png}
+<<echo=FALSE,warning=FALSE,message=FALSE>>=
+library(RCurl)
+library(png)
+library(grid)
+
+imgUrl <- 'https://raw.githubusercontent.com/lbtaylor/DataScienceGroup11/master/trump1.png'
+img <- readPNG(getURLContent(imgUrl))
+imgRaster <- as.raster(img)
+grid.raster(imgRaster)
+@
+%\includegraphics[width=400pt]{trump1.png}
 
 The above figure shows intensity of tweets per state by color.
 
-\includegraphics[width=400pt]{trump2.png}
+<<echo=FALSE,warning=FALSE,message=FALSE>>=
+library(RCurl)
+library(png)
+library(grid)
 
-The above figure shows location and intesnity of tweets by color and size.
+imgUrl <- 'https://raw.githubusercontent.com/lbtaylor/DataScienceGroup11/master/trump2.png'
+img <- readPNG(getURLContent(imgUrl))
+imgRaster <- as.raster(img)
+grid.raster(imgRaster)
+@
+%\includegraphics[width=400pt]{trump2.png}
+
+The above figure shows location and intensity of tweets by color and size.
 \end{center}
 
 \newpage
 
-\section{Conclusion} Donald Trump dominated in Twitter counts.  The number of tweets mentioning Trump outnumbered Clinton by 3.2 to 1, and outnumbered President Obama by 11.8 to 1, over the 25 day range of the sample.  Two dates stood out for exceptionally high traffic.  September 27th was the day after the first presidential debate.  October 10th was the day after the second presidential debate.  In both cases Trump mentions approximated 100,000 tweets, verssu 33,000 for Clinton, and 5,000 for President Obama.\\
-
+\section{Conclusion} Donald Trump dominated in Twitter counts.  The number of tweets mentioning Trump outnumbered Clinton by 3.2 to 1, and outnumbered President Obama by 11.8 to 1, over the 25 day range of the sample.  Two dates stood out for exceptionally high traffic.  September 27th was the day after the first presidential debate.  October 10th was the day after the second presidential debate.  In both cases Trump mentions approximated 100,000 tweets, versus 33,000 for Clinton, and 5,000 for President Obama.\\
+\\
 
 <<echo=FALSE,eval=TRUE,results='asis'>>=
 dailyCounts <- read.csv('https://github.com/lbtaylor/DataScienceGroup11/raw/master/counts_wide.csv')
@@ -460,6 +480,17 @@ highfreq$term <- factor(highfreq$term, levels = highfreq$term[order(highfreq$fre
 ggplot(highfreq, aes(freq, term)) +  geom_point()
 @
 
+\hfill
+\newline
+All told we collected 
+65,954,439 total tweets 
+between 2016-09-25 and 2016-10-19.
+695,320 were Trump related Tweets,
+59,054 were Obama related Tweets,
+269,955 were Hillary related Tweets.
+The size of database used for processing was 68,732.06 MB.
+The raw Twitter data had a preprocess size ~600 GB.
+This resulted in ~26 GB / day of raw data which is only a fraction of the data moving around on Twitter.\\
 
 One consideration for future research is the rise of automated programs generating tweets in favor of one candidate - so called, "twitter bots."  Samuel Woolley, the director of research at the Computational Propaganda project at Oxford University, found that one-third of all pro-Trump tweets, and one-fifth of pro-Clinton tweets, appeared to be automated \cite{Johnson}.  How can citizens learn to tell which are real opinions, and which are fake?   Who wants to engage in conversation, and who does not? \\
 \\
@@ -505,7 +536,7 @@ CREATE TABLE [dbo].[NewFlattenedTweets](
 GO
 \end{verbatim}
 
-A sample of inserting data from twitter json source file into table.
+A sample of inserting data from twitter JSON source file into table.
 
 \begin{verbatim}create table #tempTweets(Json nvarchar(max))
 
